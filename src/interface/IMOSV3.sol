@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-
-pragma solidity ^0.8.7;
+pragma solidity 0.8.19;
 
 interface IMOSV3 {
     enum chainType {
@@ -16,7 +15,7 @@ interface IMOSV3 {
         uint256 value;
     }
 
-    function transferOut(uint256 _toChain, CallData memory _callData)
+    function transferOut(uint256 toChain, CallData memory callData)
         external
         payable
         returns (bool);

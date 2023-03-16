@@ -8,8 +8,9 @@ import "./Vault.sol";
 import "./interface/IMOSV3.sol";
 import "./utils/Utils.sol";
 import "./interface/IVaultController.sol";
+import "./Error.sol";
 
-contract VaultController is IVaultController,Initializable {
+contract VaultController is IVaultController, Initializable {
     using SafeERC20 for IERC20;
 
     address public owner;
@@ -18,9 +19,8 @@ contract VaultController is IVaultController,Initializable {
     address public kash;
     uint256 public kashChainid;
     uint256 public gasLimit;
-    WETH    public weth;
+    WETH public weth;
     mapping(address => address) public vaults;
-    mapping (address => bool) supportedTokens;
 
     event CreateVault(address indexed token, address vault);
     event Deposit(address indexed user, address token, uint256 amount);
@@ -28,100 +28,102 @@ contract VaultController is IVaultController,Initializable {
     event Migrate(address indexed token, address oldVault, address newVault);
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Caller is not the owner");
+        if (msg.sender != owner) revert CALLER_NOT_OWNER();
         _;
     }
 
     modifier onlyMessenger() {
-        require(msg.sender == messenger, "Caller is not the messenger");
+        if (msg.sender != messenger) revert CALLER_NOT_MESSENGER();
         _;
     }
 
-    function initialization(address _messenger, address _kash, uint256 _kashChainid,address payable _weth)
-        external
-        initializer
-    {
+    modifier checkVault(address token) {
+        if (vaults[token] == address(0)) revert VAULT_NOT_EXISTS();
+        _;
+    }
+
+    function initialization(
+        address messengerAddress,
+        address kashAddress,
+        uint256 chainid,
+        address payable wethAddress
+    ) external initializer {
         owner = msg.sender;
-        messenger = _messenger;
-        kash = _kash;
-        kashChainid = _kashChainid;
-        weth = WETH(_weth);
+        messenger = messengerAddress;
+        kash = kashAddress;
+        kashChainid = chainid;
+        weth = WETH(wethAddress);
         gasLimit = 5000;
-        supportedTokens[_weth] = true;
     }
 
-    function setSupportedTokens(address _token,bool _enable) external onlyOwner {
-        supportedTokens[_token] = _enable;
+    function setVault(address token, address vault) external onlyOwner {
+        vaults[token] = vault;
     }
 
-    function createVault(address _token) external onlyOwner returns (address) {
-        require(vaults[_token] == address(0), "Vault already exists");
-        bytes memory bytecode = type(Vault).creationCode;
-        bytes32 salt = keccak256(abi.encodePacked(_token));
-        address vault;
-        assembly {
-            vault := create2(0, add(bytecode, 32), mload(bytecode), salt)
-        }
-
-        Vault(vault).initialize(_token);
-        vaults[_token] = vault;
-
-        emit CreateVault(_token, vault);
-        return vault;
+    function deposit(address token, uint256 amount) external checkVault(token) {
+        IERC20(token).safeTransferFrom(msg.sender, vaults[token], amount);
+        _callMosDeposit(msg.sender, token, amount);
     }
 
-    function deposit(address _token, uint256 _amount) external {
-        require(supportedTokens[_token],"Token not supported");
-        IERC20(_token).safeTransferFrom(msg.sender, vaults[_token], _amount);
-        _callMosDeposit(msg.sender,_token,_amount);
-    }
-
-    function depositETH() external payable {
-        weth.deposit{value:msg.value}();
-        weth.transfer(vaults[address(weth)],msg.value);
+    function depositETH() external payable checkVault(address(weth)) {
+        weth.deposit{ value: msg.value }();
+        weth.transfer(vaults[address(weth)], msg.value);
         _callMosDeposit(msg.sender, address(weth), msg.value);
     }
 
     // Call MOS
-    function _callMosDeposit(address _user,address _token,uint256 _amount) internal {
+    function _callMosDeposit(address user, address token, uint256 amount) internal {
         bytes memory data =
-            abi.encodeWithSignature("deposit(address,address,uint256)", _user, _token, _amount);
+            abi.encodeWithSignature("deposit(address,address,uint256)", user, token, amount);
         IMOSV3.CallData memory cData = IMOSV3.CallData(Utils.toBytes(kash), data, gasLimit, 0);
-        require(IMOSV3(mos).transferOut(kashChainid, cData), "send request failed");
-        emit Deposit(msg.sender, _token, _amount);
+        bool success = IMOSV3(mos).transferOut(kashChainid, cData);
+        if (!success) revert CALL_MOS_FAIL();
+        emit Deposit(msg.sender, token, amount);
     }
 
-    function withdraw(address _token, address _to, uint256 _amount) external onlyMessenger {
-        if (_token == address(weth)) {
-            Vault(vaults[address(weth)]).withdraw(address(this), _amount);
-            weth.withdraw(_amount);
-            (bool success,) = _to.call{value: _amount}("");
-            require(success,"Withdraw ETH fail");
+    function withdraw(address token, address to, uint256 amount)
+        external
+        onlyMessenger
+        checkVault(token)
+    {
+        if (token == address(weth)) {
+            Vault(vaults[address(weth)]).withdraw(address(this), amount);
+            weth.withdraw(amount);
+            (bool success,) = to.call{ value: amount }("");
+            if (!success) revert WITHDRAW_ETH_FAIL();
         } else {
-            Vault(vaults[_token]).withdraw(_to, _amount);
+            Vault(vaults[token]).withdraw(to, amount);
         }
 
-        emit Withdraw(_to, _token, _amount);
+        emit Withdraw(to, token, amount);
     }
 
-    function setGasLimit(uint256 _gasLimit) external onlyOwner {
-        gasLimit = _gasLimit;
+    function setMessenger(address messengerAddress) external onlyOwner {
+        messenger = messengerAddress;
+    }
+
+    function setMos(address mosAddress) external onlyOwner {
+        mos = mosAddress;
+    }
+
+    function setKash(address kashAddress, uint256 chainId) external onlyOwner {
+        kash = kashAddress;
+        kashChainid = chainId;
+    }
+
+    function setGasLimit(uint256 limit) external onlyOwner {
+        gasLimit = limit;
+    }
+
+    function setWETH(address payable wethAddress) external onlyOwner {
+        weth = WETH(wethAddress);
     }
 
     // Migrate vault
-    function migrate(address _token, address _newVault) external onlyOwner {
-        require(vaults[_token] != address(0), "Vault not exists");
-        address oldVault = vaults[_token];
-        Vault(oldVault).migrate(_newVault);
-        vaults[_token] = _newVault;
-        emit Migrate(_token, oldVault, _newVault);
-    }
-
-    // Extract the wrong token
-    function withdrawOtherToken(address _vault, address _token, address _to, uint256 _amount)
-        external
-        onlyOwner
-    {
-        Vault(_vault).withdrawOtherToken(_token, _to, _amount);
+    function migrate(address token, address newVault) external onlyOwner checkVault(token) {
+        address oldVault = vaults[token];
+        Vault(oldVault).migrate(newVault);
+        vaults[token] = newVault;
+        emit Migrate(token, oldVault, newVault);
     }
 }

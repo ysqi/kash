@@ -2,18 +2,15 @@
 pragma solidity 0.8.19;
 
 interface IVaultController {
-    function createVault(address _token) external returns (address);
+    function deposit(address token, uint256 amount) external;
 
-    function deposit(address _token, uint256 _amount) external;
+    function depositETH() external payable;
 
-    function withdraw(address _token, address _to, uint256 _amount) external;
+    function withdraw(address token, address to, uint256 amount) external;
 
-    function migrate(address _token, address _newVault) external;
+    function migrate(address token, address newVault) external;
 
-    function withdrawOtherToken(
-        address _vault,
-        address _token,
-        address _to,
-        uint256 _amount
-    ) external;
+    function setVault(address token, address vault) external;
+
+    function setGasLimit(uint256 limit) external;
 }
