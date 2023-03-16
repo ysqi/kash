@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
 import "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
@@ -29,7 +29,7 @@ contract Vault is Ownable {
         IERC20(token).safeTransfer(_newVault, balance);
     }
 
-    // 找回转错的Token，禁止取回金库的Token
+    // Extract the wrong token
     function withdrawOtherToken(address _token, address _to, uint256 _amount) external onlyOwner {
         require(_token != token, "Token not allowed");
         IERC20(_token).safeTransfer(_to, _amount);
