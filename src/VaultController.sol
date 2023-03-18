@@ -5,9 +5,9 @@ import "@openzeppelin/proxy/utils/Initializable.sol";
 import "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 import "solmate/tokens/WETH.sol";
 import "./Vault.sol";
-import "./interface/IMOSV3.sol";
+import "./interfaces/IMOSV3.sol";
 import "./utils/Utils.sol";
-import "./interface/IVaultController.sol";
+import "./interfaces/IVaultController.sol";
 import "./Error.sol";
 
 contract VaultController is IVaultController, Initializable {
