@@ -1,36 +1,32 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import "@openzeppelin/proxy/utils/Initializable.sol";
 import "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 import "solmate/tokens/WETH.sol";
 import "./Vault.sol";
 import "./interfaces/IMOSV3.sol";
 import "./utils/Utils.sol";
 import "./interfaces/IVaultController.sol";
+import "./protocol/lib/upgradeable/KashUUPSUpgradeable.sol";
 import "./Error.sol";
 
-contract VaultController is IVaultController, Initializable {
+contract VaultController is IVaultController, KashUUPSUpgradeable {
     using SafeERC20 for IERC20;
 
-    address public owner;
     address public messenger;
     address public mos;
-    address public kash;
-    uint256 public kashChainid;
+    address public door;
+    uint256 public doorChainid;
     uint256 public gasLimit;
     WETH public weth;
     mapping(address => address) public vaults;
 
     event CreateVault(address indexed token, address vault);
-    event Deposit(address indexed user, address token, uint256 amount);
+    event Supply(address indexed user, address token, uint256 amount);
+    event Repay(address indexed user, address token, uint256 amount);
     event Withdraw(address indexed user, address token, uint256 amount);
+    event Borrow(address indexed user, address token, uint256 amount);
     event Migrate(address indexed token, address oldVault, address newVault);
-
-    modifier onlyOwner() {
-        if (msg.sender != owner) revert CALLER_NOT_OWNER();
-        _;
-    }
 
     modifier onlyMessenger() {
         if (msg.sender != messenger) revert CALLER_NOT_MESSENGER();
@@ -42,16 +38,16 @@ contract VaultController is IVaultController, Initializable {
         _;
     }
 
-    function initialization(
+    function initialize(
         address messengerAddress,
-        address kashAddress,
+        address doorAddress,
         uint256 chainid,
         address payable wethAddress
-    ) external initializer {
-        owner = msg.sender;
+    ) external {
+        KashUUPSUpgradeable._init();
         messenger = messengerAddress;
-        kash = kashAddress;
-        kashChainid = chainid;
+        door = doorAddress;
+        doorChainid = chainid;
         weth = WETH(wethAddress);
         gasLimit = 5000;
     }
@@ -60,42 +56,114 @@ contract VaultController is IVaultController, Initializable {
         vaults[token] = vault;
     }
 
-    function deposit(address token, uint256 amount) external checkVault(token) {
+    function supply(
+        address token,
+        uint256 amount,
+        bytes calldata customData
+    ) external checkVault(token) {
         IERC20(token).safeTransferFrom(msg.sender, vaults[token], amount);
-        _callMosDeposit(msg.sender, token, amount);
+        bytes32 sideAsset = keccak256(abi.encode(block.chainid, token));
+        bytes memory data = abi.encodeWithSignature(
+            "handleSupply(bytes32,bytes32,uint256,bytes)",
+            sideAsset,
+            Utils.toBytes32(msg.sender),
+            amount,
+            customData
+        );
+        _callMos(data);
+        emit Supply(msg.sender, token, amount);
     }
 
-    function depositETH() external payable checkVault(address(weth)) {
-        weth.deposit{ value: msg.value }();
+    function supplyETH(
+        bytes calldata customData
+    ) external payable checkVault(address(weth)) {
+        weth.deposit{value: msg.value}();
         weth.transfer(vaults[address(weth)], msg.value);
-        _callMosDeposit(msg.sender, address(weth), msg.value);
+        bytes32 sideAsset = keccak256(abi.encode(block.chainid, address(weth)));
+        bytes memory data = abi.encodeWithSignature(
+            "handleSupply(bytes32,bytes32,uint256,bytes)",
+            sideAsset,
+            Utils.toBytes32(msg.sender),
+            msg.value,
+            customData
+        );
+        _callMos(data);
+        emit Supply(msg.sender, address(weth), msg.value);
+    }
+
+    function repay(
+        address token,
+        uint256 amount,
+        bytes calldata customData
+    ) external checkVault(token) {
+        IERC20(token).safeTransferFrom(msg.sender, vaults[token], amount);
+        bytes32 sideAsset = keccak256(abi.encode(block.chainid, token));
+        bytes memory data = abi.encodeWithSignature(
+            "handleRepay(bytes32,bytes32,uint256,bytes)",
+            sideAsset,
+            Utils.toBytes32(msg.sender),
+            amount,
+            customData
+        );
+        _callMos(data);
+        emit Repay(msg.sender, token, amount);
+    }
+
+    function repayETH(
+        bytes calldata customData
+    ) external payable checkVault(address(weth)) {
+        bytes32 sideAsset = keccak256(abi.encode(block.chainid, address(weth)));
+        bytes memory data = abi.encodeWithSignature(
+            "handleRepay(bytes32,bytes32,uint256,bytes)",
+            sideAsset,
+            Utils.toBytes32(msg.sender),
+            msg.value,
+            customData
+        );
+        _callMos(data);
+        emit Repay(msg.sender, address(weth), msg.value);
+        emit Repay(msg.sender, address(weth), msg.value);
     }
 
     // Call MOS
-    function _callMosDeposit(address user, address token, uint256 amount) internal {
-        bytes memory data =
-            abi.encodeWithSignature("deposit(address,address,uint256)", user, token, amount);
-        IMOSV3.CallData memory cData = IMOSV3.CallData(Utils.toBytes(kash), data, gasLimit, 0);
-        bool success = IMOSV3(mos).transferOut(kashChainid, cData);
+    function _callMos(bytes memory data) internal {
+        IMOSV3.CallData memory cData = IMOSV3.CallData(
+            Utils.toBytes(door),
+            data,
+            gasLimit,
+            0
+        );
+        bool success = IMOSV3(mos).transferOut(doorChainid, cData);
         if (!success) revert CALL_MOS_FAIL();
-        emit Deposit(msg.sender, token, amount);
     }
 
-    function withdraw(address token, address to, uint256 amount)
-        external
-        onlyMessenger
-        checkVault(token)
-    {
+    function withdraw(
+        address token,
+        address to,
+        uint256 amount
+    ) external onlyMessenger checkVault(token) {
+        _withdraw(token, to, amount);
+        emit Withdraw(to, token, amount);
+    }
+
+    function borrow(
+        address token,
+        address to,
+        uint256 amount
+    ) external onlyMessenger checkVault(token) {
+        _withdraw(token, to, amount);
+        emit Borrow(to, token, amount);
+    }
+
+    function _withdraw(address token, address to, uint256 amount) internal {
         if (token == address(weth)) {
             Vault(vaults[address(weth)]).withdraw(address(this), amount);
             weth.withdraw(amount);
-            (bool success,) = to.call{ value: amount }("");
+            (bool success, ) = to.call{value: amount}("");
             if (!success) revert WITHDRAW_ETH_FAIL();
         } else {
             Vault(vaults[token]).withdraw(to, amount);
         }
-
-        emit Withdraw(to, token, amount);
     }
 
     function setMessenger(address messengerAddress) external onlyOwner {
@@ -106,9 +174,9 @@ contract VaultController is IVaultController, Initializable {
         mos = mosAddress;
     }
 
-    function setKash(address kashAddress, uint256 chainId) external onlyOwner {
-        kash = kashAddress;
-        kashChainid = chainId;
+    function setDoor(address doorAddress, uint256 chainId) external onlyOwner {
+        door = doorAddress;
+        doorChainid = chainId;
     }
 
     function setGasLimit(uint256 limit) external onlyOwner {
@@ -120,7 +188,10 @@ contract VaultController is IVaultController, Initializable {
     }
 
     // Migrate vault
-    function migrate(address token, address newVault) external onlyOwner checkVault(token) {
+    function migrate(
+        address token,
+        address newVault
+    ) external onlyOwner checkVault(token) {
         address oldVault = vaults[token];
         Vault(oldVault).migrate(newVault);
         vaults[token] = newVault;

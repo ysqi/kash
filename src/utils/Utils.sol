@@ -11,4 +11,12 @@ library Utils {
     function toBytes(address self) internal pure returns (bytes memory b) {
         b = abi.encodePacked(self);
     }
+
+    function toBytes32(address self) internal pure returns (bytes32 b) {
+        b = bytes32(uint256(uint160(self)));
+    }
+
+    function fromBytes32(bytes32 bys32) internal pure returns (address b) {
+        b = address(uint160(uint256(bys32)));
+    }
 }

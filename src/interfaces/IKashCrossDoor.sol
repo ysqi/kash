@@ -25,20 +25,22 @@ interface IKashCrossDoor {
     /**
      * @notice Processing withdraw requests on MOS chain.
      * @param caller is the siger of this withdraw transaction.
-     * @param sideAsset is the hash value of sha3(chainId,assetAddress)
+     * @param chainId is target chianid.
+     * @param asset is target asset.
      * @param receiver is the recipient of asset withdrawals.
      * @param amount is the amount of withdrawals.
      */
-    function handleWithdraw(address caller, bytes32 sideAsset, bytes32 receiver, uint256 amount)
+    function handleWithdraw(address caller, uint256 chainId, address asset, bytes32 receiver, uint256 amount)
         external;
 
     /**
      * @notice Processing borrow requests on MOS chain.
      * @param caller is the siger of this withdraw transaction.
-     * @param sideAsset is the hash value of sha3(chainId,assetAddress)
+     * @param chainId is target chianid.
+     * @param asset is target asset.
      * @param borrower is the borrower for this loan.
      * @param amount is the borrowing amount.
      */
-    function handleBorrow(address caller, bytes32 sideAsset, bytes32 borrower, uint256 amount)
+    function handleBorrow(address caller, uint256 chainId, address asset, bytes32 borrower, uint256 amount)
         external;
 }
