@@ -4,7 +4,8 @@ pragma solidity 0.8.19;
 struct InitReserveParams {
     address asset;
     address kTokenAddress;
-    address debtAddress;
+    address stableDebtTokenAddress;
+    address variableDebtTokenAddress;
     address interestRateStrategyAddress;
     uint16 reservesCount;
     uint16 maxNumberReserves;
