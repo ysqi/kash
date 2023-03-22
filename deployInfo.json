@@ -1,0 +1,8 @@
+{
+  "goerli": {
+    "chain": "9"
+  },
+  "arbtest": {
+    "chain": "421613"
+  }
+}
