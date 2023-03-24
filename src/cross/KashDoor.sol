@@ -133,8 +133,13 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     function _callMos(uint256 controllerChainid, bytes memory controller, bytes memory data)
         internal
     {
-        IMOSV3.CallData memory cData = IMOSV3.CallData(controller, data, gasLimit, 0);
-        bool success = IMOSV3(mos).transferOut(controllerChainid, cData);
+        // IMOSV3.CallData memory cData = IMOSV3.CallData(controller, data, gasLimit, 0);
+        IMOSV3.MessageData memory mData = IMOSV3.MessageData(false,IMOSV3.MessageType.CALLDATA,controller,data,gasLimit,0);
+
+        bytes memory mDataBytes = abi.encode(mData);
+
+        (uint256 amount,address receiverAddress) = IMOSV3(mos).getMessageFee(controllerChainid,address(0),500000);
+        bool success = IMOSV3(mos).transferOut{value: amount}(controllerChainid, mDataBytes,address(0));
         if (!success) revert CALL_MOS_FAIL();
     }
 
