@@ -47,6 +47,8 @@ interface ICreditToken is IScaledBalanceToken, IERC20Permit {
      */
     function transferUnderlyingTo(address target, uint256 amount) external;
 
+    function handleRepayment(address caller, uint256 amount) external;
+
     /**
      * @notice Returns the address of the underlying asset of this aToken (E.g. WETH for aWETH)
      * @return The address of the underlying asset

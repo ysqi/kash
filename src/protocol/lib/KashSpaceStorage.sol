@@ -17,6 +17,8 @@ contract KashSpaceStorage {
     // Map of the configuration of the user across all the reserves (userAddress => config)
     mapping(address => UserConfigurationMap) internal _userConfigs;
 
+    mapping(address => uint256) _useNonce;
+
     /**
      * The balance of asset on all chains.
      * e.g query the balance of WETH on ethereum:

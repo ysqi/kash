@@ -49,7 +49,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         uint16 referralCode = abi.decode(data, (uint16));
         address user = Utils.fromBytes32(suppler);
 
-        IPool(kashPool).supply(user, tokenMappingByKash[sideAsset], amount, user, referralCode);
+        IPool(kashPool).supply(tokenMappingByKash[sideAsset], amount, user, referralCode);
         balance[sideAsset] += amount;
     }
 

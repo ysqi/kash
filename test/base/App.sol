@@ -81,4 +81,13 @@ contract App is Test {
             rateModel: rateModel
         });
     }
+
+    function supply(ReserveState calldata reserve, address user, uint256 amount) external {
+        reserve.asset.mint(user, amount);
+
+        vm.startPrank(user);
+        reserve.asset.approve(address(address(reserve.creditToken)), amount);
+        reserve.pool.supply(address(reserve.asset), amount, user, 0);
+        vm.stopPrank();
+    }
 }
