@@ -7,6 +7,9 @@ import "../interfaces/IKashCrossDoor.sol";
 import "../utils/Utils.sol";
 import "../interfaces/IMOSV3.sol";
 import "./Error.sol";
+import "./MToken.sol";
+import "@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol";
+import "../protocol/lib/KashDataTypes.sol";
 
 contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     IMOSV3 public mos;
@@ -14,7 +17,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     address public messenger;
     uint256 public gasLimit;
 
-    mapping(bytes32 => address) public tokenMappingByKash;
+    mapping(bytes32 => address) public mTokens;
     mapping(bytes32 => bytes32) public tokenMappingByTarget;
     mapping(uint256 chainid => bytes controller) public controllers;
     mapping(bytes32 => uint256) public balance;
@@ -42,6 +45,24 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         kashPool = kashPoolAddr;
     }
 
+    function _mintAndApprove(bytes32 sideAsset,uint256 amount) internal {
+        if (mTokens[sideAsset] == address(0)) {
+            address targetTokenAddr = Utils.fromBytes32(tokenMappingByTarget[sideAsset]);
+            string memory name = IERC20Metadata(targetTokenAddr).name();
+            name = string.concat("Mos ",name);
+            string memory symbol = IERC20Metadata(targetTokenAddr).symbol();
+            symbol = string.concat("m_",symbol);
+            mTokens[sideAsset] = address(new MToken(name,symbol));
+        }
+
+        // mint
+        MToken(mTokens[sideAsset]).mint(address(this),amount);
+        //approve
+        ReserveData memory reserveData = IPool(kashPool).getReserveData(mTokens[sideAsset]);
+        address kTokenAddr = reserveData.kTokenAddress;
+        MToken(mTokens[sideAsset]).approve(kTokenAddr,amount);
+    }
+
     function handleSupply(bytes32 sideAsset, bytes32 suppler, uint256 amount, bytes calldata data)
         external
         override /* onlyMessenger */
@@ -49,7 +70,9 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         uint16 referralCode = abi.decode(data, (uint16));
         address user = Utils.fromBytes32(suppler);
 
-        IPool(kashPool).supply(user, tokenMappingByKash[sideAsset], amount, user, referralCode);
+        _mintAndApprove(sideAsset,amount);
+
+        IPool(kashPool).supply(user, mTokens[sideAsset], amount, user, referralCode);
         balance[sideAsset] += amount;
     }
 
@@ -58,8 +81,11 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         override /* onlyMessenger */
     {
         uint256 interestRateMode = abi.decode(data, (uint256));
+        
+        _mintAndApprove(sideAsset,amount);
+        
         IPool(kashPool).repay(
-            tokenMappingByKash[sideAsset], amount, interestRateMode, Utils.fromBytes32(borrower)
+            mTokens[sideAsset], amount, interestRateMode, Utils.fromBytes32(borrower)
         );
         balance[sideAsset] += amount;
     }
@@ -79,6 +105,9 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
             Utils.fromBytes32(receiver),
             amount
         );
+
+        // burn mtoken
+        MToken(mTokens[sideAsset]).burn(address(this),amount);
 
         _callMos(chainId, controllers[chainId], data);
 
@@ -101,6 +130,8 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
             amount
         );
 
+        MToken(mTokens[sideAsset]).burn(address(this),amount);
+
         _callMos(chainId, controllers[chainId], data);
         balance[sideAsset] -= amount;
     }
@@ -122,9 +153,9 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         mos = IMOSV3(mosAddr);
     }
 
-    function setMappingByKash(bytes32 sideAsset, address tokenAddr) external onlyOwner {
-        tokenMappingByKash[sideAsset] = tokenAddr;
-    }
+    // function setMappingByKash(bytes32 sideAsset, address tokenAddr) external onlyOwner {
+    //     mTokens[sideAsset] = tokenAddr;
+    // }
 
     function setMappingByTarget(bytes32 sideAsset, bytes32 tokenAddr) external onlyOwner {
         tokenMappingByTarget[sideAsset] = tokenAddr;
