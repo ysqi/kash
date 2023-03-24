@@ -59,8 +59,8 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         MToken(mTokens[sideAsset]).mint(address(this), amount);
         //approve
         ReserveData memory reserveData = IPool(kashPool).getReserveData(mTokens[sideAsset]);
-        address kTokenAddr = reserveData.kTokenAddress;
-        MToken(mTokens[sideAsset]).approve(kTokenAddr, amount);
+        address creditToken = reserveData.creditTokenAddress;
+        MToken(mTokens[sideAsset]).approve(creditToken, amount);
     }
 
     function handleSupply(bytes32 sideAsset, bytes32 suppler, uint256 amount, bytes calldata data)

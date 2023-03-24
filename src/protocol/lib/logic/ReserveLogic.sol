@@ -47,9 +47,9 @@ library ReserveLogic {
             * IDebitToken(reserve.variableDebtTokenAddress).scaledTotalSupply() / WadMath.WAD;
 
         //  totalSupply =  index * scaledTotalSupply
-        ICreditToken ktoken = ICreditToken(reserve.kTokenAddress);
-        uint256 cash = IERC20(asset).balanceOf(address(ktoken));
-        uint256 scaledCash = ktoken.scaledTotalSupply();
+        ICreditToken creditToken = ICreditToken(reserve.creditTokenAddress);
+        uint256 cash = IERC20(asset).balanceOf(address(creditToken));
+        uint256 scaledCash = creditToken.scaledTotalSupply();
         uint256 currentLiquidityRate =
             scaledCash == 0 ? WadMath.WAD : (cash + totalBorrows).wadDiv(scaledCash);
 
@@ -60,7 +60,7 @@ library ReserveLogic {
         }
 
         uint256 newInterestRates = IInterestRateStrategy(reserve.interestRateStrategyAddress)
-            .borrowRate(IERC20(asset).balanceOf(reserve.kTokenAddress), totalBorrows, 0);
+            .borrowRate(IERC20(asset).balanceOf(reserve.creditTokenAddress), totalBorrows, 0);
 
         reserve.currentVariableBorrowRate = newInterestRates.safeCastTo128();
         reserve.liquidityIndex = newLiquidityIndex.safeCastTo128();
@@ -84,10 +84,10 @@ library ReserveLogic {
             * IDebitToken(reserve.variableDebtTokenAddress).scaledTotalSupply() / WadMath.WAD;
 
         //  totalSupply =  index * scaledTotalSupply
-        ICreditToken ktoken = ICreditToken(reserve.kTokenAddress);
-        uint256 cash = IERC20(asset).balanceOf(address(ktoken));
-        uint256 currentLiquidityRate =
-            (cash + totalBorrows - liquidityTaken + liquidityAdded) / ktoken.scaledTotalSupply();
+        ICreditToken creditToken = ICreditToken(reserve.creditTokenAddress);
+        uint256 cash = IERC20(asset).balanceOf(address(creditToken));
+        uint256 currentLiquidityRate = (cash + totalBorrows - liquidityTaken + liquidityAdded)
+            / creditToken.scaledTotalSupply();
 
         uint256 newLiquidityIndex =
             reserve.liquidityIndex + reserve.liquidityIndex * currentLiquidityRate;

@@ -40,7 +40,7 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
 
     function initReserve(
         address asset,
-        address kTokenAddress,
+        address creditTokenAddress,
         address stableDebtAddress,
         address variableDebtAddress,
         address interestRateStrategyAddress
@@ -51,7 +51,7 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
                 _reserveList,
                 InitReserveParams({
                     asset: asset,
-                    kTokenAddress: kTokenAddress,
+                    creditTokenAddress: creditTokenAddress,
                     stableDebtTokenAddress: stableDebtAddress,
                     variableDebtTokenAddress: variableDebtAddress,
                     interestRateStrategyAddress: interestRateStrategyAddress,

@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 struct InitReserveParams {
     address asset;
-    address kTokenAddress;
+    address creditTokenAddress;
     address stableDebtTokenAddress;
     address variableDebtTokenAddress;
     address interestRateStrategyAddress;
@@ -28,8 +28,8 @@ struct ReserveData {
     uint40 lastUpdateTimestamp;
     //the id of the reserve. Represents the position in the list of the active reserves
     uint16 id;
-    //kToken address
-    address kTokenAddress;
+    //creditToken address
+    address creditTokenAddress;
     //stableDebtToken address
     address stableDebtTokenAddress;
     //variableDebtToken address
