@@ -2,11 +2,25 @@
 pragma solidity 0.8.19;
 
 interface IVaultController {
-    function deposit(address token, uint256 amount) external;
+    function supply(
+        address token,
+        uint256 amount,
+        bytes calldata customData
+    ) external;
 
-    function depositETH() external payable;
+    function supplyETH(bytes calldata customData) external payable;
+
+    function repay(
+        address token,
+        uint256 amount,
+        bytes calldata customData
+    ) external;
+
+    function repayETH(bytes calldata customData) external payable;
 
     function withdraw(address token, address to, uint256 amount) external;
+
+    function borrow(address token, address to, uint256 amount) external;
 
     function migrate(address token, address newVault) external;
 
