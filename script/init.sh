@@ -7,6 +7,13 @@ source ".env.$NETWORK"
 
 commargs="--private-key $RAW_PRIVATE_KEY --rpc-url $ETH_RPC_URL --from $ETH_FROM "
 
+changeNetwork() {
+    echo "change chain is: $1"
+    echo "loading source: .env.$1"
+    source ".env.$1"
+    commargs="--private-key $RAW_PRIVATE_KEY --rpc-url $ETH_RPC_URL --from $ETH_FROM "
+}
+
 checkErr(){
   if [ $? -ne 0 ]; then
     echo "failed"

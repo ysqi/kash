@@ -1,8 +1,20 @@
 {
-  "goerli": {
-    "chain": "9"
+  "map_test": {
+    "chain": 212,
+    "pool": "0x0e3392D389A9f07Bf262137324dDa2336fd6b3a9",
+    "mos": "0xb6c1b689291532d11172fb4c204bf13169ec0dca",
+    "messenger": "0xb6c1b689291532d11172fb4c204bf13169ec0dca",
+    "doorImpl": "0x4C6980bE12b0D92a1Eeb7babB78858B3045FFF6B",
+    "door": "0x62eddDe4c947EcC957fb6442b1472BDbfdCc54A7"
   },
-  "arbtest": {
-    "chain": "421613"
+  "bsc_test": {
+    "chain": 97,
+    "mos": "0x220bE51C717c4E257Cb8e96be8591740336623F8",
+    "messenger": "0xb6c1b689291532d11172fb4c204bf13169ec0dca",
+    "weth": "0x161aB8635B28a2f190B3f696877A435A032ab1C1",
+    "usdt": "0x55876b3f4c456A203836f33387d110dEa0bEFF73",
+    "controllerImpl": "0xeA7f0782C6c744F16159B92bFa268ab4458182dD",
+    "controller": "0x3ACCe3c7559f30815D68E1Dd1175F0E4b187678C",
+    "vault": "0xC8692CA4e193f594Fc900aE3969Cf25111f67ECC"
   }
 }
