@@ -5,44 +5,81 @@ ret_val=""
 
 ZERO_ADDRESS="0x0000000000000000000000000000000000000000"
 
-deployToken(){
-  echo "deploy ERC20"
-  if  is_exsit  "so3" ; then
+deployDoor(){
+  changeNetwork "map_test"
+
+  echo "deploy config contract"
+  if  is_exsit  "door" ; then
     echo "skip deploy when exist"
   else
-    cmd="forge create src/SO3.sol:SO3 $commargs --json"
-    deployContract "so3" "$cmd"
+      # deploy implement
+    cmd="forge create src/cross/KashDoor.sol:KashDoor $commargs --json"
+    deployContract "doorImpl" "$cmd"
+    # load var
+    loadValue "doorImpl" "IMPL"
+    loadValue "pool" "pool"
+    loadValue "mos" "mos"
+    loadValue "messenger" "messenger"
+
+    # deploy proxy
+    initializeData="$(cast calldata "initialize(address mosAddr,address messengerAddr,address kashPoolAddr)" \
+                  "$mos" "$messenger" "$pool")"
+    checkErr
+    cmd="forge create ./lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy $commargs  --json --constructor-args $IMPL $initializeData"
+    deployContract "door" "$cmd"
   fi
 }
 
+deployController(){
+  changeNetwork "bsc_test"
 
-deployVaultController(){
   echo "deploy config contract"
-  if  is_exsit  "vaultController" ; then
+  if  is_exsit  "controller" ; then
     echo "skip deploy when exist"
   else
       # deploy implement
     cmd="forge create src/VaultController.sol:VaultController $commargs --json"
-    deployContract "VaultControllerImpl" "$cmd"
+    deployContract "controllerImpl" "$cmd"
     # load var
-    loadValue "VaultControllerImpl" "IMPL"
-    loadValue "so3" "SO3"
-    loadValue "treasury" "treasury"
-    loadValue "chef" "chef"
+    loadValue "controllerImpl" "IMPL"
+    loadValue "mos" "mos"
+    loadValue "messenger" "messenger"
+    loadValue "weth" "weth"
+    door=$(jq .map_test.door deployInfo.json -r)
+    chainid=$(jq .map_test.chain deployInfo.json -r)
+
 
     # deploy proxy
-    initializeData="$(cast calldata "initialize(address treasury_, address so3, address chef)" \
-                  "$treasury"  "$SO3" "$chef")"
+    initializeData="$(cast calldata "initialize(address messengerAddress,address doorAddress,uint256 chainid,address wethAddress,address mosAddr)" \
+                  "$messenger" "$door" "$chainid" "$weth" "$mos")"
     checkErr
     cmd="forge create lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy $commargs  --json --constructor-args $IMPL $initializeData"
-    deployContract "vaultController" "$cmd"
+    deployContract "controller" "$cmd"
   fi
 }
 
+deployVault(){
+  changeNetwork "bsc_test"
 
+  echo "deploy config contract"
+  if  is_exsit  "vault" ; then
+    echo "skip deploy when exist"
+  else
+      # deploy implement
+    cmd="forge create src/Vault.sol:Vault $commargs --json --constructor-args $1 $2"
+    deployContract "vault" "$cmd"
+    
+  fi
+}
 
 case $1 in
-"deployVaultController")
-  deployVaultController
+"Door")
+  deployDoor
+  ;;
+"Controller")
+  deployController
+  ;;
+"Vault")
+  deployVault $2 $3
   ;;
 esac
