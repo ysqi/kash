@@ -35,8 +35,8 @@ library DebitLogic {
             caller, caller, assetAmount, reserve.variableBorrowIndex
         );
         // transfer
-        ICreditToken ktoken = ICreditToken(reserve.creditTokenAddress);
-        ktoken.transferUnderlyingTo(onBehalfOf, assetAmount);
+        ICreditToken creditToken = ICreditToken(reserve.creditTokenAddress);
+        creditToken.transferUnderlyingTo(onBehalfOf, assetAmount);
         // 3. TODO: event
     }
 

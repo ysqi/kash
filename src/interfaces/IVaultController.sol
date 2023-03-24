@@ -2,19 +2,11 @@
 pragma solidity 0.8.19;
 
 interface IVaultController {
-    function supply(
-        address token,
-        uint256 amount,
-        bytes calldata customData
-    ) external;
+    function supply(address token, uint256 amount, bytes calldata customData) external;
 
     function supplyETH(bytes calldata customData) external payable;
 
-    function repay(
-        address token,
-        uint256 amount,
-        bytes calldata customData
-    ) external;
+    function repay(address token, uint256 amount, bytes calldata customData) external;
 
     function repayETH(bytes calldata customData) external payable;
 

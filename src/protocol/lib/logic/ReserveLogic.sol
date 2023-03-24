@@ -47,9 +47,9 @@ library ReserveLogic {
             * IDebitToken(reserve.variableDebtTokenAddress).scaledTotalSupply() / WadMath.WAD;
 
         //  totalSupply =  index * scaledTotalSupply
-        ICreditToken ktoken = ICreditToken(reserve.creditTokenAddress);
-        uint256 cash = IERC20(asset).balanceOf(address(ktoken));
-        uint256 scaledCash = ktoken.scaledTotalSupply();
+        ICreditToken creditToken = ICreditToken(reserve.creditTokenAddress);
+        uint256 cash = IERC20(asset).balanceOf(address(creditToken));
+        uint256 scaledCash = creditToken.scaledTotalSupply();
         uint256 currentLiquidityRate =
             scaledCash == 0 ? WadMath.WAD : (cash + totalBorrows).wadDiv(scaledCash);
 
@@ -84,10 +84,10 @@ library ReserveLogic {
             * IDebitToken(reserve.variableDebtTokenAddress).scaledTotalSupply() / WadMath.WAD;
 
         //  totalSupply =  index * scaledTotalSupply
-        ICreditToken ktoken = ICreditToken(reserve.creditTokenAddress);
-        uint256 cash = IERC20(asset).balanceOf(address(ktoken));
-        uint256 currentLiquidityRate =
-            (cash + totalBorrows - liquidityTaken + liquidityAdded) / ktoken.scaledTotalSupply();
+        ICreditToken creditToken = ICreditToken(reserve.creditTokenAddress);
+        uint256 cash = IERC20(asset).balanceOf(address(creditToken));
+        uint256 currentLiquidityRate = (cash + totalBorrows - liquidityTaken + liquidityAdded)
+            / creditToken.scaledTotalSupply();
 
         uint256 newLiquidityIndex =
             reserve.liquidityIndex + reserve.liquidityIndex * currentLiquidityRate;

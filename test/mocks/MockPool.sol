@@ -6,30 +6,19 @@ struct MokeReserveData {
 }
 
 contract MockPool {
-    constructor() {}
+    constructor() { }
 
-    event Repay(
-        address asset,
-        uint256 amount,
-        uint256 interestRateMode,
-        address onBehalfOf
-    );
+    event Repay(address asset, uint256 amount, uint256 interestRateMode, address onBehalfOf);
 
     event Supply(
-        address caller,
-        address asset,
-        uint256 amount,
-        address onBehalfOf,
-        uint16 referralCode
+        address caller, address asset, uint256 amount, address onBehalfOf, uint16 referralCode
     );
 
-    function repay(
-        address asset,
-        uint256 amount,
-        uint256 interestRateMode,
-        address onBehalfOf
-    ) external returns (uint256) {
-        emit Repay(asset,amount,interestRateMode,onBehalfOf);
+    function repay(address asset, uint256 amount, uint256 interestRateMode, address onBehalfOf)
+        external
+        returns (uint256)
+    {
+        emit Repay(asset, amount, interestRateMode, onBehalfOf);
         return 1;
     }
 
@@ -40,10 +29,10 @@ contract MockPool {
         address onBehalfOf,
         uint16 referralCode
     ) external {
-        emit Supply(caller,asset,amount,onBehalfOf,referralCode);
+        emit Supply(caller, asset, amount, onBehalfOf, referralCode);
     }
 
-    function getReserveData(address asset) external view returns (MokeReserveData memory){
+    function getReserveData(address asset) external view returns (MokeReserveData memory) {
         return MokeReserveData(asset);
     }
 }

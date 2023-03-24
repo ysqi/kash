@@ -16,9 +16,9 @@ interface ICreditToken is IScaledBalanceToken, IERC20Permit {
     event BalanceTransfer(address indexed from, address indexed to, uint256 value, uint256 index);
 
     /**
-     * @notice Mints `amount` kTokens to `user`
+     * @notice Mints `amount` creditTokens to `user`
      * @param caller The address performing the mint
-     * @param onBehalfOf The address of the user that will receive the minted kTokens
+     * @param onBehalfOf The address of the user that will receive the minted creditTokens
      * @param amount The amount of tokens getting minted
      * @param index The next liquidity index of the reserve
      * @return `true` if the the previous balance of the user was 0
@@ -28,10 +28,10 @@ interface ICreditToken is IScaledBalanceToken, IERC20Permit {
         returns (bool);
 
     /**
-     * @notice Burns kTokens from `user` and sends the equivalent amount of underlying to `receiverOfUnderlying`
+     * @notice Burns creditTokens from `user` and sends the equivalent amount of underlying to `receiverOfUnderlying`
      * @dev In some instances, the mint event could be emitted from a burn transaction
      * if the amount to burn is less than the interest that the user accrued
-     * @param from The address from which the kTokens will be burned
+     * @param from The address from which the creditTokens will be burned
      * @param receiverOfUnderlying The address that will receive the underlying
      * @param amount The amount being burned
      * @param index The next liquidity index of the reserve

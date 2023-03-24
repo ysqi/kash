@@ -45,22 +45,22 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         kashPool = kashPoolAddr;
     }
 
-    function _mintAndApprove(bytes32 sideAsset,uint256 amount) internal {
+    function _mintAndApprove(bytes32 sideAsset, uint256 amount) internal {
         if (mTokens[sideAsset] == address(0)) {
             address targetTokenAddr = Utils.fromBytes32(tokenMappingByTarget[sideAsset]);
             string memory name = IERC20Metadata(targetTokenAddr).name();
-            name = string.concat("Mos ",name);
+            name = string.concat("Mos ", name);
             string memory symbol = IERC20Metadata(targetTokenAddr).symbol();
-            symbol = string.concat("m_",symbol);
+            symbol = string.concat("m_", symbol);
             mTokens[sideAsset] = address(new MToken(name,symbol));
         }
 
         // mint
-        MToken(mTokens[sideAsset]).mint(address(this),amount);
+        MToken(mTokens[sideAsset]).mint(address(this), amount);
         //approve
         ReserveData memory reserveData = IPool(kashPool).getReserveData(mTokens[sideAsset]);
-        address kTokenAddr = reserveData.kTokenAddress;
-        MToken(mTokens[sideAsset]).approve(kTokenAddr,amount);
+        address creditToken = reserveData.creditTokenAddress;
+        MToken(mTokens[sideAsset]).approve(creditToken, amount);
     }
 
     function handleSupply(bytes32 sideAsset, bytes32 suppler, uint256 amount, bytes calldata data)
@@ -70,7 +70,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         uint16 referralCode = abi.decode(data, (uint16));
         address user = Utils.fromBytes32(suppler);
 
-        _mintAndApprove(sideAsset,amount);
+        _mintAndApprove(sideAsset, amount);
 
         IPool(kashPool).supply(mTokens[sideAsset], amount, user, referralCode);
         balance[sideAsset] += amount;
@@ -81,9 +81,9 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         override /* onlyMessenger */
     {
         uint256 interestRateMode = abi.decode(data, (uint256));
-        
-        _mintAndApprove(sideAsset,amount);
-        
+
+        _mintAndApprove(sideAsset, amount);
+
         IPool(kashPool).repay(
             mTokens[sideAsset], amount, interestRateMode, Utils.fromBytes32(borrower)
         );
@@ -107,7 +107,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         );
 
         // burn mtoken
-        MToken(mTokens[sideAsset]).burn(address(this),amount);
+        MToken(mTokens[sideAsset]).burn(address(this), amount);
 
         _callMos(chainId, controllers[chainId], data);
 
@@ -130,7 +130,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
             amount
         );
 
-        MToken(mTokens[sideAsset]).burn(address(this),amount);
+        MToken(mTokens[sideAsset]).burn(address(this), amount);
 
         _callMos(chainId, controllers[chainId], data);
         balance[sideAsset] -= amount;

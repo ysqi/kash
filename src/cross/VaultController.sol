@@ -60,11 +60,10 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
         vaults[token] = vault;
     }
 
-    function supply(
-        address token,
-        uint256 amount,
-        bytes calldata customData
-    ) external checkVault(token) {
+    function supply(address token, uint256 amount, bytes calldata customData)
+        external
+        checkVault(token)
+    {
         IERC20(token).safeTransferFrom(msg.sender, vaults[token], amount);
         bytes32 sideAsset = keccak256(abi.encode(block.chainid, token));
         bytes memory data = abi.encodeWithSignature(
@@ -78,10 +77,8 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
         emit Supply(msg.sender, token, amount);
     }
 
-    function supplyETH(
-        bytes calldata customData
-    ) external payable checkVault(address(weth)) {
-        weth.deposit{value: msg.value}();
+    function supplyETH(bytes calldata customData) external payable checkVault(address(weth)) {
+        weth.deposit{ value: msg.value }();
         weth.transfer(vaults[address(weth)], msg.value);
         bytes32 sideAsset = keccak256(abi.encode(block.chainid, address(weth)));
         bytes memory data = abi.encodeWithSignature(
@@ -95,11 +92,10 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
         emit Supply(msg.sender, address(weth), msg.value);
     }
 
-    function repay(
-        address token,
-        uint256 amount,
-        bytes calldata customData
-    ) external checkVault(token) {
+    function repay(address token, uint256 amount, bytes calldata customData)
+        external
+        checkVault(token)
+    {
         IERC20(token).safeTransferFrom(msg.sender, vaults[token], amount);
         bytes32 sideAsset = keccak256(abi.encode(block.chainid, token));
         bytes memory data = abi.encodeWithSignature(
@@ -113,9 +109,7 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
         emit Repay(msg.sender, token, amount);
     }
 
-    function repayETH(
-        bytes calldata customData
-    ) external payable checkVault(address(weth)) {
+    function repayETH(bytes calldata customData) external payable checkVault(address(weth)) {
         bytes32 sideAsset = keccak256(abi.encode(block.chainid, address(weth)));
         bytes memory data = abi.encodeWithSignature(
             "handleRepay(bytes32,bytes32,uint256,bytes)",
@@ -130,30 +124,25 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
 
     // Call MOS
     function _callMos(bytes memory data) internal {
-        IMOSV3.CallData memory cData = IMOSV3.CallData(
-            Utils.toBytes(door),
-            data,
-            gasLimit,
-            0
-        );
+        IMOSV3.CallData memory cData = IMOSV3.CallData(Utils.toBytes(door), data, gasLimit, 0);
         bool success = IMOSV3(mos).transferOut(doorChainid, cData);
         if (!success) revert CALL_MOS_FAIL();
     }
 
-    function withdraw(
-        address token,
-        address to,
-        uint256 amount
-    ) external onlyMessenger checkVault(token) {
+    function withdraw(address token, address to, uint256 amount)
+        external
+        onlyMessenger
+        checkVault(token)
+    {
         _withdraw(token, to, amount);
         emit Withdraw(to, token, amount);
     }
 
-    function borrow(
-        address token,
-        address to,
-        uint256 amount
-    ) external onlyMessenger checkVault(token) {
+    function borrow(address token, address to, uint256 amount)
+        external
+        onlyMessenger
+        checkVault(token)
+    {
         _withdraw(token, to, amount);
         emit Borrow(to, token, amount);
     }
@@ -162,7 +151,7 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
         if (token == address(weth)) {
             Vault(vaults[address(weth)]).withdraw(address(this), amount);
             weth.withdraw(amount);
-            (bool success, ) = to.call{value: amount}("");
+            (bool success,) = to.call{ value: amount }("");
             if (!success) revert WITHDRAW_ETH_FAIL();
         } else {
             Vault(vaults[token]).withdraw(to, amount);
@@ -191,10 +180,7 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
     }
 
     // Migrate vault
-    function migrate(
-        address token,
-        address newVault
-    ) external onlyOwner checkVault(token) {
+    function migrate(address token, address newVault) external onlyOwner checkVault(token) {
         address oldVault = vaults[token];
         Vault(oldVault).migrate(newVault);
         vaults[token] = newVault;

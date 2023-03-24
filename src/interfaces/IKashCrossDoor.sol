@@ -30,8 +30,13 @@ interface IKashCrossDoor {
      * @param receiver is the recipient of asset withdrawals.
      * @param amount is the amount of withdrawals.
      */
-    function handleWithdraw(address caller, uint256 chainId, address asset, bytes32 receiver, uint256 amount)
-        external;
+    function handleWithdraw(
+        address caller,
+        uint256 chainId,
+        address asset,
+        bytes32 receiver,
+        uint256 amount
+    ) external;
 
     /**
      * @notice Processing borrow requests on MOS chain.
@@ -41,6 +46,11 @@ interface IKashCrossDoor {
      * @param borrower is the borrower for this loan.
      * @param amount is the borrowing amount.
      */
-    function handleBorrow(address caller, uint256 chainId, address asset, bytes32 borrower, uint256 amount)
-        external;
+    function handleBorrow(
+        address caller,
+        uint256 chainId,
+        address asset,
+        bytes32 borrower,
+        uint256 amount
+    ) external;
 }

@@ -28,7 +28,7 @@ struct ReserveData {
     uint40 lastUpdateTimestamp;
     //the id of the reserve. Represents the position in the list of the active reserves
     uint16 id;
-    //kToken address
+    //creditToken address
     address creditTokenAddress;
     //stableDebtToken address
     address stableDebtTokenAddress;
