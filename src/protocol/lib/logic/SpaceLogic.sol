@@ -8,6 +8,19 @@ import "@openzeppelin/utils/Address.sol";
 library SpaceLogic {
     using Address for address;
 
+    event ConfigurationChanged(address asset, ReserveConfigurationMap configuration);
+
+    function executeSetConfiguration(
+        address asset,
+        mapping(address => ReserveConfigurationMap) storage reserveConfigs,
+        ReserveConfigurationMap calldata configuration
+    ) internal {
+        // TODO: if reserve is not found.
+        reserveConfigs[asset].data = configuration.data;
+
+        emit ConfigurationChanged(asset, configuration);
+    }
+
     function executeRemoveReserve(
         mapping(address => ReserveData) storage reserveData,
         mapping(uint16 => address) storage reserveList,
