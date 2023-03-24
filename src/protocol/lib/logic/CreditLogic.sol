@@ -27,7 +27,7 @@ library CreditLogic {
         // TODO: revert if reserve is stopped.
 
         // 2. mint kToken
-        ICreditToken ktoken = ICreditToken(reserve.kTokenAddress);
+        ICreditToken ktoken = ICreditToken(reserve.creditTokenAddress);
         ktoken.mint(caller, onBehalfOf, assetAmount, reserve.liquidityIndex);
         // 3. TODO: event
     }
@@ -49,7 +49,7 @@ library CreditLogic {
 
         reserve.updateInterestRates(asset, 0, assetAmount);
 
-        ICreditToken(reserve.kTokenAddress).burn(
+        ICreditToken(reserve.creditTokenAddress).burn(
             caller, onBehalfOf, assetAmount, reserve.liquidityIndex
         );
         // 3. TODO: event

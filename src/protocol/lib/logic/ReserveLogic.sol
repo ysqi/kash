@@ -47,7 +47,7 @@ library ReserveLogic {
             * IDebitToken(reserve.variableDebtTokenAddress).scaledTotalSupply() / WadMath.WAD;
 
         //  totalSupply =  index * scaledTotalSupply
-        ICreditToken ktoken = ICreditToken(reserve.kTokenAddress);
+        ICreditToken ktoken = ICreditToken(reserve.creditTokenAddress);
         uint256 cash = IERC20(asset).balanceOf(address(ktoken));
         uint256 scaledCash = ktoken.scaledTotalSupply();
         uint256 currentLiquidityRate =
@@ -60,7 +60,7 @@ library ReserveLogic {
         }
 
         uint256 newInterestRates = IInterestRateStrategy(reserve.interestRateStrategyAddress)
-            .borrowRate(IERC20(asset).balanceOf(reserve.kTokenAddress), totalBorrows, 0);
+            .borrowRate(IERC20(asset).balanceOf(reserve.creditTokenAddress), totalBorrows, 0);
 
         reserve.currentVariableBorrowRate = newInterestRates.safeCastTo128();
         reserve.liquidityIndex = newLiquidityIndex.safeCastTo128();
@@ -84,7 +84,7 @@ library ReserveLogic {
             * IDebitToken(reserve.variableDebtTokenAddress).scaledTotalSupply() / WadMath.WAD;
 
         //  totalSupply =  index * scaledTotalSupply
-        ICreditToken ktoken = ICreditToken(reserve.kTokenAddress);
+        ICreditToken ktoken = ICreditToken(reserve.creditTokenAddress);
         uint256 cash = IERC20(asset).balanceOf(address(ktoken));
         uint256 currentLiquidityRate =
             (cash + totalBorrows - liquidityTaken + liquidityAdded) / ktoken.scaledTotalSupply();
