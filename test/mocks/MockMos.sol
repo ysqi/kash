@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 contract MockMos {
-    constructor() {}
+    constructor() { }
 
     struct CallData {
         bytes target;
@@ -11,13 +11,14 @@ contract MockMos {
         uint256 value;
     }
 
-    event TransferOut(uint256 toChain,CallData callData);
+    event TransferOut(uint256 toChain, CallData callData);
 
-    function transferOut(
-        uint256 toChain,
-        CallData memory callData
-    ) external payable returns (bool) {
-        emit TransferOut(toChain,callData);
+    function transferOut(uint256 toChain, CallData memory callData)
+        external
+        payable
+        returns (bool)
+    {
+        emit TransferOut(toChain, callData);
         return true;
     }
 }

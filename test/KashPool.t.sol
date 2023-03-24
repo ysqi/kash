@@ -100,6 +100,5 @@ contract CounterTest is Test {
         assertLt(debits, 1e18 / 2);
 
         // bob get more eth
-        
     }
 }
