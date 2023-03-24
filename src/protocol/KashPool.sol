@@ -5,18 +5,33 @@ import "../interfaces/IPool.sol";
 import "./lib/KashSpaceStorage.sol";
 import "./lib/logic/SpaceLogic.sol";
 import "./lib/logic/CreditLogic.sol";
+import "./lib/logic/DebitLogic.sol";
 import "./lib/helpers/Errors.sol";
 import "./lib/KashConstants.sol";
 import "./lib/upgradeable/KashUUPSUpgradeable.sol";
+import "./../interfaces/IKashCrossDoor.sol";
 
-contract KashPool is IPool, KashUUPSUpgradeable, KashSpaceStorage {
+import "@openzeppelin-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import "@openzeppelin-upgradeable/utils/cryptography/SignatureCheckerUpgradeable.sol";
+
+contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceStorage {
     modifier onlyMaster() {
         if (master != msg.sender) revert Errors.NO_PERMISSION();
         _;
     }
 
+    // solhint-disable-next-line var-name-mixedcase
+    bytes32 private constant _WITHDRAW_TYPEHASH = keccak256(
+        "withdrawDelegate(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 deadline,bytes signature)"
+    );
+    bytes32 private constant _BORROW_TYPEHASH = keccak256(
+        "borrowDelegate(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 deadline,bytes signature)"
+    );
+
     function initialize() external initializer {
         KashUUPSUpgradeable._init();
+
+        EIP712Upgradeable.__EIP712_init("KashPool", "v1");
     }
 
     function setMaster(address addr) external onlyOwner {
@@ -52,37 +67,91 @@ contract KashPool is IPool, KashUUPSUpgradeable, KashSpaceStorage {
         _reserveCount--;
     }
 
-    function supply(
+    function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode)
+        external
+    {
+        CreditLogic.executeSupply(msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs);
+    }
+
+    function withdrawDelegate(
         address caller,
         address asset,
         uint256 amount,
-        address onBehalfOf,
-        uint16 referralCode
-    ) external onlyMaster {
-        CreditLogic.executeSupply(caller, asset, amount, onBehalfOf, _reserves, _reserveConfigs);
+        bytes32 onBehalfOf,
+        uint256 chainId,
+        uint256 deadline,
+        bytes memory signature
+    ) external returns (uint256) {
+        if (block.timestamp > deadline) revert Errors.EXPIRED_DEADLINE();
+
+        bytes32 structHash = keccak256(
+            abi.encode(
+                _WITHDRAW_TYPEHASH, caller, asset, amount, onBehalfOf, _useNonce[caller], deadline
+            )
+        );
+        if (
+            !SignatureCheckerUpgradeable.isValidSignatureNow(
+                caller, _hashTypedDataV4(structHash), signature
+            )
+        ) {
+            revert Errors.ILLEGAL_SIGNATURE();
+        }
+        _useNonce[caller]++;
+        CreditLogic.executeWithraw(caller, asset, amount, master, _reserves, _reserveConfigs);
+
+        IKashCrossDoor(master).handleWithdraw(caller, chainId, asset, onBehalfOf, amount);
     }
 
-    function withdraw(address caller, address asset, uint256 amount, address onBehalfOf)
+    function withdraw(address asset, uint256 amount, address onBehalfOf)
         external
-        onlyMaster
         returns (uint256)
     {
-        CreditLogic.executeWithraw(caller, asset, amount, onBehalfOf, _reserves, _reserveConfigs);
+        CreditLogic.executeWithraw(
+            msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs
+        );
     }
 
-    function borrow(
+    function borrow(address asset, uint256 amount, address onBehalfOf) external {
+        DebitLogic.executeBorrow(msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs);
+    }
+
+    function borrowDelegate(
         address caller,
         address asset,
         uint256 amount,
-        uint256 interestRateMode,
-        uint16 referralCode,
-        address onBehalfOf
-    ) external { }
+        bytes32 onBehalfOf,
+        uint256 chainId,
+        uint256 deadline,
+        bytes memory signature
+    ) external {
+        if (block.timestamp > deadline) revert Errors.EXPIRED_DEADLINE();
+
+        bytes32 structHash = keccak256(
+            abi.encode(
+                _WITHDRAW_TYPEHASH, caller, asset, amount, onBehalfOf, _useNonce[caller], deadline
+            )
+        );
+
+        if (
+            !SignatureCheckerUpgradeable.isValidSignatureNow(
+                caller, _hashTypedDataV4(structHash), signature
+            )
+        ) {
+            revert Errors.ILLEGAL_SIGNATURE();
+        }
+        _useNonce[caller]++;
+
+        DebitLogic.executeBorrow(caller, asset, amount, master, _reserves, _reserveConfigs);
+
+        IKashCrossDoor(master).handleWithdraw(caller, chainId, asset, onBehalfOf, amount);
+    }
 
     function repay(address asset, uint256 amount, uint256 interestRateMode, address onBehalfOf)
         external
         returns (uint256)
-    { }
+    {
+        DebitLogic.executeRepay(msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs);
+    }
 
     function setConfiguration(address asset, ReserveConfigurationMap calldata configuration)
         external

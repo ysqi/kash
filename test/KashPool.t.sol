@@ -31,7 +31,8 @@ contract CounterTest is Test {
         reserve.asset.approve(address(address(reserve.creditToken)), amount);
 
         reserve.asset.mint(alice, amount);
-        reserve.pool.supply(alice, address(reserve.asset), amount, alice, 0);
+        vm.prank(alice);
+        reserve.pool.supply(address(reserve.asset), amount, alice, 0);
         assertEq(reserve.creditToken.balanceOf(alice), 1e20);
         assertEq(reserve.asset.balanceOf(address(reserve.creditToken)), 1e20);
 
@@ -43,7 +44,8 @@ contract CounterTest is Test {
         reserve.asset.approve(address(address(reserve.creditToken)), amount);
 
         reserve.asset.mint(bob, amount);
-        reserve.pool.supply(bob, address(reserve.asset), amount, bob, 0);
+        vm.prank(bob);
+        reserve.pool.supply(address(reserve.asset), amount, bob, 0);
         assertEq(reserve.creditToken.balanceOf(bob), 1e20);
         assertEq(reserve.asset.balanceOf(address(reserve.creditToken)), 1e20 * 2);
     }
@@ -54,17 +56,50 @@ contract CounterTest is Test {
         address alice = makeAddr("alice");
         uint256 amount = 1e20;
 
-        vm.prank(alice);
-        reserve.asset.approve(address(address(reserve.creditToken)), amount);
-        reserve.asset.mint(alice, amount);
-        reserve.pool.supply(alice, address(reserve.asset), amount, alice, 0);
+        app.supply(reserve, alice, amount);
 
         //withdraw
 
         address bob = makeAddr("bob");
         uint256 withdrawAmount = 1.5e18;
-        reserve.pool.withdraw(alice, address(reserve.asset), withdrawAmount, bob);
+        vm.prank(alice);
+        reserve.pool.withdraw(address(reserve.asset), withdrawAmount, bob);
         assertEq(reserve.creditToken.balanceOf(alice), amount - withdrawAmount);
         assertEq(reserve.asset.balanceOf(bob), withdrawAmount);
+    }
+
+    function testBorrow() external {
+        ReserveState memory usdtReserve = app.createReserve("USDT", 18);
+        ReserveState memory ethReserve = app.createReserve("ETH", 18);
+        address alice = makeAddr("alice");
+        address bob = makeAddr("bob");
+        uint256 amount = 1e20;
+
+        app.supply(usdtReserve, alice, amount);
+        app.supply(ethReserve, bob, 1e30);
+
+        // borrow eth
+
+        uint256 borrowAmount = 1e18;
+        vm.prank(alice);
+        ethReserve.pool.borrow(address(ethReserve.asset), borrowAmount, alice);
+        assertEq(ethReserve.asset.balanceOf(alice), borrowAmount);
+        assertEq(ethReserve.debitToken.balanceOf(alice), borrowAmount);
+
+        skip(10 minutes);
+
+        //repay
+        vm.startPrank(alice);
+        ethReserve.asset.approve(address(ethReserve.creditToken), borrowAmount);
+        ethReserve.pool.repay(address(ethReserve.asset), borrowAmount, 0, alice);
+        vm.stopPrank();
+
+        // The rest is interest
+        uint256 debits = ethReserve.debitToken.balanceOf(alice);
+        assertGe(debits, 0);
+        assertLt(debits, 1e18 / 2);
+
+        // bob get more eth
+        
     }
 }

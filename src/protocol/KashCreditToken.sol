@@ -66,6 +66,10 @@ contract KashCreditToken is ICreditToken, ERC20Permit {
         IERC20(_underlyingAsset).safeTransfer(target, amount);
     }
 
+    function handleRepayment(address caller, uint256 amount) external onlyPool {
+        IERC20(_underlyingAsset).safeTransferFrom(caller, address(this), amount);
+    }
+
     function scaledTotalSupply() external view returns (uint256) {
         return super.totalSupply();
     }

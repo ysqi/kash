@@ -6,4 +6,6 @@ library Errors {
     error ASSET_EXIST_RESERVE(); //the reserve of the asset is exist,you can't repeat set;
     error RESERVE_NOT_FOUND(); // can't find the reserve by asset.
     error NO_PERMISSION();
+    error ILLEGAL_SIGNATURE();
+    error EXPIRED_DEADLINE();
 }

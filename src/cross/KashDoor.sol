@@ -72,7 +72,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
 
         _mintAndApprove(sideAsset,amount);
 
-        IPool(kashPool).supply(user, mTokens[sideAsset], amount, user, referralCode);
+        IPool(kashPool).supply(mTokens[sideAsset], amount, user, referralCode);
         balance[sideAsset] += amount;
     }
 

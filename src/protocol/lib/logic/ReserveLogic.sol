@@ -13,6 +13,7 @@ import "@solmate/utils/SafeCastLib.sol";
 
 library ReserveLogic {
     using SafeCastLib for uint256;
+    using WadMath for uint256;
 
     event ReserveStateUpdated(
         address asset,
@@ -35,7 +36,8 @@ library ReserveLogic {
             reserve.variableBorrowIndex = WadMath.WAD.safeCastTo128();
         }
 
-        uint256 newBorrowIndex = reserve.variableBorrowIndex + rate * reserve.variableBorrowIndex;
+        uint256 newBorrowIndex =
+            reserve.variableBorrowIndex + rate * reserve.variableBorrowIndex / WadMath.WAD;
         if (newBorrowIndex == 0) {
             newBorrowIndex = WadMath.WAD;
         }
@@ -49,10 +51,10 @@ library ReserveLogic {
         uint256 cash = IERC20(asset).balanceOf(address(ktoken));
         uint256 scaledCash = ktoken.scaledTotalSupply();
         uint256 currentLiquidityRate =
-            scaledCash == 0 ? WadMath.WAD : (cash + totalBorrows) / scaledCash;
+            scaledCash == 0 ? WadMath.WAD : (cash + totalBorrows).wadDiv(scaledCash);
 
         uint256 newLiquidityIndex =
-            reserve.liquidityIndex + reserve.liquidityIndex * currentLiquidityRate;
+            reserve.liquidityIndex + reserve.liquidityIndex * currentLiquidityRate / WadMath.WAD;
         if (newLiquidityIndex == 0) {
             newLiquidityIndex = WadMath.WAD;
         }
@@ -60,7 +62,7 @@ library ReserveLogic {
         uint256 newInterestRates = IInterestRateStrategy(reserve.interestRateStrategyAddress)
             .borrowRate(IERC20(asset).balanceOf(reserve.kTokenAddress), totalBorrows, 0);
 
-        reserve.currentVariableBorrowRate = newInterestRates.safeCastTo128(); // TODO: safe cast
+        reserve.currentVariableBorrowRate = newInterestRates.safeCastTo128();
         reserve.liquidityIndex = newLiquidityIndex.safeCastTo128();
         reserve.variableBorrowIndex = newBorrowIndex.safeCastTo128();
         reserve.currentLiquidityRate = currentLiquidityRate.safeCastTo128();
@@ -89,6 +91,11 @@ library ReserveLogic {
 
         uint256 newLiquidityIndex =
             reserve.liquidityIndex + reserve.liquidityIndex * currentLiquidityRate;
+
+        uint256 newInterestRates = IInterestRateStrategy(reserve.interestRateStrategyAddress)
+            .borrowRate(cash - liquidityTaken + liquidityAdded, totalBorrows, 0);
+
+        reserve.currentVariableBorrowRate = newInterestRates.safeCastTo128();
 
         reserve.liquidityIndex = newLiquidityIndex.safeCastTo128();
         reserve.currentLiquidityRate = currentLiquidityRate.safeCastTo128();
