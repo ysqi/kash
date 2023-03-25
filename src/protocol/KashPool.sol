@@ -83,7 +83,7 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         bytes memory signature
     ) external returns (uint256) {
         if (block.timestamp > deadline) revert Errors.EXPIRED_DEADLINE();
-
+        uint256 nonce = _useNonce[caller];
         bytes32 structHash = keccak256(
             abi.encode(
                 _WITHDRAW_TYPEHASH,
@@ -92,7 +92,7 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
                 amount,
                 onBehalfOf,
                 chainId,
-                _useNonce[caller],
+                nonce,
                 deadline
             )
         );
@@ -132,6 +132,7 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         bytes memory signature
     ) external {
         if (block.timestamp > deadline) revert Errors.EXPIRED_DEADLINE();
+        uint256 nonce = _useNonce[caller];
 
         bytes32 structHash = keccak256(
             abi.encode(
@@ -141,7 +142,7 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
                 amount,
                 onBehalfOf,
                 chainId,
-                _useNonce[caller],
+                nonce,
                 deadline
             )
         );
