@@ -86,7 +86,14 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
 
         bytes32 structHash = keccak256(
             abi.encode(
-                _WITHDRAW_TYPEHASH, caller,asset,amount,onBehalfOf,chainId,_useNonce[caller],deadline
+                _WITHDRAW_TYPEHASH,
+                caller,
+                asset,
+                amount,
+                onBehalfOf,
+                chainId,
+                _useNonce[caller],
+                deadline
             )
         );
         if (
@@ -128,7 +135,14 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
 
         bytes32 structHash = keccak256(
             abi.encode(
-                _BORROW_TYPEHASH,caller,asset,amount,onBehalfOf,chainId,_useNonce[caller],deadline
+                _BORROW_TYPEHASH,
+                caller,
+                asset,
+                amount,
+                onBehalfOf,
+                chainId,
+                _useNonce[caller],
+                deadline
             )
         );
 

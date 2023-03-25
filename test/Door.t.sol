@@ -12,7 +12,7 @@ import "./base/App.sol";
 
 import "./Sign.sol";
 
-contract DoorTest is Test,Sign {
+contract DoorTest is Test, Sign {
     KashDoor door;
     MockERC20 ethUSDT;
     uint256 ethChainId = 5;
@@ -67,18 +67,36 @@ contract DoorTest is Test,Sign {
         testCrossSuplly();
         address asset = address(ethUSDT);
         uint256 amount = 100e18;
-        (address alice,uint256 key) = makeAddrAndKey("alice");
+        (address alice, uint256 key) = makeAddrAndKey("alice");
         // vm.prank(alice);
-        bytes memory sign = makeWithdrawCallData(key,makeAddr("verifyContract"),makeAddr("call"),makeAddr("asset"),100e18,Utils.toBytes32(makeAddr("onBehalfOf")),ethChainId,9999,1);
-
+        bytes memory sign = makeWithdrawCallData(
+            key,
+            makeAddr("verifyContract"),
+            makeAddr("call"),
+            makeAddr("asset"),
+            100e18,
+            Utils.toBytes32(makeAddr("onBehalfOf")),
+            ethChainId,
+            9999,
+            1
+        );
     }
 
-    function makeWithdrawCallData(uint256 privateKey, address verifyContract,address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 deadline,uint256 nonce)
-        public
-        returns (bytes memory)
-    {
+    function makeWithdrawCallData(
+        uint256 privateKey,
+        address verifyContract,
+        address caller,
+        address asset,
+        uint256 amount,
+        bytes32 onBehalfOf,
+        uint256 chainId,
+        uint256 deadline,
+        uint256 nonce
+    ) public returns (bytes memory) {
         address owner = vm.addr(privateKey);
-        bytes32 hash = makeWithdrawHash(verifyContract, caller, asset, amount, onBehalfOf,chainId,deadline,nonce);
+        bytes32 hash = makeWithdrawHash(
+            verifyContract, caller, asset, amount, onBehalfOf, chainId, deadline, nonce
+        );
 
         vm.startPrank(owner);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, hash);
@@ -86,17 +104,24 @@ contract DoorTest is Test,Sign {
         return abi.encode(v, r, s);
     }
 
-    function makeWithdrawHash(address verifycontract,address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 deadline,uint256 nonce)
-        public
-        view
-        returns (bytes32)
-    {
+    function makeWithdrawHash(
+        address verifycontract,
+        address caller,
+        address asset,
+        uint256 amount,
+        bytes32 onBehalfOf,
+        uint256 chainId,
+        uint256 deadline,
+        uint256 nonce
+    ) public view returns (bytes32) {
         return keccak256(
             abi.encodePacked(
                 "\x19\x01",
                 keccak256(
                     abi.encode(
-                        keccak256("EIP712Domain(string name,string version,uint256 chainid,address verifyingContract)"),
+                        keccak256(
+                            "EIP712Domain(string name,string version,uint256 chainid,address verifyingContract)"
+                        ),
                         keccak256(bytes("Kash DAPP")),
                         keccak256(bytes("1")),
                         212,
@@ -105,13 +130,18 @@ contract DoorTest is Test,Sign {
                 ),
                 keccak256(
                     abi.encode(
-                        keccak256("withdrawDelegate(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 deadline,bytes signature)"),
-                        caller, asset, amount, onBehalfOf, nonce, deadline
+                        keccak256(
+                            "withdrawDelegate(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 deadline,bytes signature)"
+                        ),
+                        caller,
+                        asset,
+                        amount,
+                        onBehalfOf,
+                        nonce,
+                        deadline
                     )
                 )
             )
         );
     }
-
-    
 }
