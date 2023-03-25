@@ -5,6 +5,7 @@ import "../interfaces/IPool.sol";
 import "./lib/KashSpaceStorage.sol";
 import "./lib/logic/SpaceLogic.sol";
 import "./lib/logic/CreditLogic.sol";
+import "./lib/logic/UserLogic.sol";
 import "./lib/logic/DebitLogic.sol";
 import "./lib/helpers/Errors.sol";
 import "./lib/KashConstants.sol";
@@ -70,7 +71,9 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
     function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode)
         external
     {
-        CreditLogic.executeSupply(msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs);
+        CreditLogic.executeSupply(
+            msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs, _userConfigs
+        );
     }
 
     function withdrawDelegate(
@@ -97,7 +100,9 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
             revert Errors.ILLEGAL_SIGNATURE();
         }
         _useNonce[caller]++;
-        CreditLogic.executeWithraw(caller, asset, amount, master, _reserves, _reserveConfigs);
+        CreditLogic.executeWithraw(
+            caller, asset, amount, master, _reserves, _reserveConfigs, _userConfigs
+        );
 
         IKashCrossDoor(master).handleWithdraw(caller, chainId, asset, onBehalfOf, amount);
     }
@@ -107,12 +112,14 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         returns (uint256)
     {
         CreditLogic.executeWithraw(
-            msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs
+            msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs, _userConfigs
         );
     }
 
     function borrow(address asset, uint256 amount, address onBehalfOf) external {
-        DebitLogic.executeBorrow(msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs);
+        DebitLogic.executeBorrow(
+            msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs, _userConfigs
+        );
     }
 
     function borrowDelegate(
@@ -141,7 +148,9 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         }
         _useNonce[caller]++;
 
-        DebitLogic.executeBorrow(caller, asset, amount, master, _reserves, _reserveConfigs);
+        DebitLogic.executeBorrow(
+            caller, asset, amount, master, _reserves, _reserveConfigs, _userConfigs
+        );
 
         IKashCrossDoor(master).handleWithdraw(caller, chainId, asset, onBehalfOf, amount);
     }
@@ -150,7 +159,9 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         external
         returns (uint256)
     {
-        DebitLogic.executeRepay(msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs);
+        DebitLogic.executeRepay(
+            msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs, _userConfigs
+        );
     }
 
     function setConfiguration(address asset, ReserveConfigurationMap calldata configuration)
@@ -193,18 +204,43 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         return _reserveList[id];
     }
 
+    // struct QueryUserDataParams {
+    //     address user;
+    //     UserConfigurationMap userconfig;
+    //     uint16 reservesCount;
+    //     address oracle;
+    // }
+
     function getUserAccountData(address user)
         external
         view
         returns (
-            uint256 totalCollateralBase,
-            uint256 totalDebtBase,
-            uint256 availableBorrowsBase,
+            uint256 totalCollateral,
+            uint256 totalDebt,
+            uint256 availableBorrows,
             uint256 currentLiquidationThreshold,
             uint256 ltv,
             uint256 healthFactor
         )
-    { }
+    {
+        (
+            totalCollateral,
+            totalDebt,
+            availableBorrows,
+            currentLiquidationThreshold,
+            ltv,
+            healthFactor
+        ) = UserLogic.getUserAccountData(
+            QueryUserDataParams({
+                user: user,
+                userconfig: _userConfigs[user],
+                reservesCount: _reserveCount,
+                oracle: oracle
+            }),
+            _reserves,
+            _reserveList
+        );
+    }
 
     function BRIDGE_PROTOCOL_FEE() external pure returns (uint256) {
         return 0.001 * 1e18; //

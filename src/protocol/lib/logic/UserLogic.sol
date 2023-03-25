@@ -53,6 +53,7 @@ library UserLogic {
             uint256 totalCollateral,
             uint256 totalDebt,
             uint256 availableBorrows,
+            uint256 currentLiquidationThreshold,
             uint256 ltv,
             uint256 healthFactor
         )
@@ -62,29 +63,38 @@ library UserLogic {
         for (uint16 i = 0; i < params.reservesCount; i++) {
             if (hasSupply(params.userconfig, i) || hasBorrow(params.userconfig, i)) {
                 address asset = reserveList[i];
-                ReserveData storage reserve = reserveData[asset];
-                (uint256 supplies, uint256 borrows) =
-                    ReserveLogic.getUserBalance(reserve, params.user);
 
-                //price
-                (uint256 updateAt, uint256 wadPrice) = IOracle(params.oracle).getLastPrice(asset);
-                // TODO: check update time
-                // TODO: need use decimals
-                totalCollateral += supplies.wadMul(wadPrice);
-                totalDebt += borrows.wadMul(wadPrice);
+                UserReserveData memory detail = getUserAccountDetailData(asset, params, reserveData);
 
-                totalDiscounting += supplies.wadMul(wadPrice) * 8 / 10; // TODO: collateral rate=80%
+                totalCollateral += detail.totalSupply.wadMul(detail.assetPrice);
+                totalDebt += detail.totalBorrows.wadMul(detail.assetPrice);
+                totalDiscounting +=
+                    detail.totalSupply.wadMul(detail.assetPrice).wadMul(detail.collateralRate);
             }
         }
-        ltv = availableBorrows.wadDiv(totalCollateral);
-        healthFactor = availableBorrows.wadDiv(totalDiscounting);
+
+        currentLiquidationThreshold = 0.8 * 1e18; // fixed value 80%
+        uint256 borrowLimit = totalDiscounting.wadMul(currentLiquidationThreshold);
+
+        ltv = totalDebt.wadDiv(totalCollateral);
+        healthFactor = totalDebt.wadDiv(totalDiscounting);
+        availableBorrows = borrowLimit > totalDebt ? borrowLimit - totalDebt : 0;
+
+        return (
+            totalCollateral,
+            totalDebt,
+            availableBorrows,
+            currentLiquidationThreshold,
+            ltv,
+            healthFactor
+        );
     }
 
     function getUserAccountDetailData(
         address asset,
         QueryUserDataParams memory params,
         mapping(address => ReserveData) storage reserveData
-    ) external view returns (UserReserveData memory detail) {
+    ) internal view returns (UserReserveData memory detail) {
         ReserveData storage reserve = reserveData[asset];
         (detail.totalSupply, detail.totalBorrows) =
             ReserveLogic.getUserBalance(reserve, params.user);
@@ -93,6 +103,7 @@ library UserLogic {
         (, detail.assetPrice) = IOracle(params.oracle).getLastPrice(asset);
         // TODO: check update time
         // TODO: need use decimals
-        detail.collateralRate = 0.8 * 1e4; //80%
+        // TODO: collateral rate=80%
+        detail.collateralRate = 0.8 * 1e18; //80%
     }
 }

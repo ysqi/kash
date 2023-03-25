@@ -26,5 +26,7 @@ contract KashSpaceStorage {
      */
     mapping(uint256 => mapping(address => uint256)) public liquidityShadow;
 
+    address public oracle;
+
     address public master;
 }
