@@ -11,6 +11,21 @@ struct InitReserveParams {
     uint16 maxNumberReserves;
 }
 
+struct QueryUserDataParams {
+    address user;
+    UserConfigurationMap userconfig;
+    uint16 reservesCount;
+    address oracle;
+}
+
+struct UserReserveData {
+    address asset;
+    uint256 assetPrice;
+    uint256 collateralRate;
+    uint256 totalSupply;
+    uint256 totalBorrows;
+}
+
 struct ReserveData {
     //stores the reserve configuration
     ReserveConfigurationMap configuration;

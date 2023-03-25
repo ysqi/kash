@@ -2,10 +2,11 @@
 pragma solidity 0.8.19;
 
 import "@openzeppelin/token/ERC20/extensions/IERC20Permit.sol";
+import "@openzeppelin/token/ERC20/IERC20.sol";
 
 import "./IScaledBalanceToken.sol";
 
-interface ICreditToken is IScaledBalanceToken, IERC20Permit {
+interface ICreditToken is IERC20, IScaledBalanceToken, IERC20Permit {
     /**
      * @dev Emitted during the transfer action
      * @param from The user whose tokens are being transferred
