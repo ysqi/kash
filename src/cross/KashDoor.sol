@@ -18,7 +18,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     uint256 public gasLimit;
 
     mapping(bytes32 => address) public mTokens;
-    mapping(bytes32 => bytes32) public tokenMappingByTarget;
+    mapping(address mtoken => mapping (uint256 chainid => bytes32 targetToken)) chainTokenMapping;
     mapping(uint256 chainid => bytes controller) public controllers;
     mapping(bytes32 => uint256) public balance;
 
@@ -46,15 +46,6 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     }
 
     function _mintAndApprove(bytes32 sideAsset, uint256 amount) internal {
-        if (mTokens[sideAsset] == address(0)) {
-            address targetTokenAddr = Utils.fromBytes32(tokenMappingByTarget[sideAsset]);
-            string memory name = IERC20Metadata(targetTokenAddr).name();
-            name = string.concat("Mos ", name);
-            string memory symbol = IERC20Metadata(targetTokenAddr).symbol();
-            symbol = string.concat("m_", symbol);
-            mTokens[sideAsset] = address(new MToken(name,symbol));
-        }
-
         // mint
         MToken(mTokens[sideAsset]).mint(address(this), amount);
         //approve
@@ -97,20 +88,21 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         bytes32 receiver,
         uint256 amount
     ) external override onlyKashPool {
-        bytes32 sideAsset = keccak256(abi.encode(chainId, asset));
-        if (balance[sideAsset] < amount) revert INSUFFICIENT_VAULT_FUNDS();
+        // if (balance[sideAsset] < amount) revert INSUFFICIENT_VAULT_FUNDS();
         bytes memory data = abi.encodeWithSignature(
             "function withdraw(address,address,uint256)",
-            Utils.fromBytes32(tokenMappingByTarget[sideAsset]),
+            Utils.fromBytes32(chainTokenMapping[asset][chainId]),
             Utils.fromBytes32(receiver),
             amount
         );
 
         // burn mtoken
-        MToken(mTokens[sideAsset]).burn(address(this), amount);
+        MToken(asset).burn(address(this), amount);
 
         _callMos(chainId, controllers[chainId], data);
 
+        bytes32 targetToken = chainTokenMapping[asset][chainId];
+        bytes32 sideAsset = keccak256(abi.encode(chainId, targetToken));
         balance[sideAsset] -= amount;
     }
 
@@ -121,18 +113,19 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         bytes32 borrower,
         uint256 amount
     ) external override onlyKashPool {
-        bytes32 sideAsset = keccak256(abi.encode(chainId, asset));
-        if (balance[sideAsset] < amount) revert INSUFFICIENT_VAULT_FUNDS();
+        // if (balance[sideAsset] < amount) revert INSUFFICIENT_VAULT_FUNDS();
         bytes memory data = abi.encodeWithSignature(
             "function withdraw(address,address,uint256)",
-            Utils.fromBytes32(tokenMappingByTarget[sideAsset]),
+            Utils.fromBytes32(chainTokenMapping[asset][chainId]),
             Utils.fromBytes32(borrower),
             amount
         );
 
-        MToken(mTokens[sideAsset]).burn(address(this), amount);
+        MToken(asset).burn(address(this), amount);
 
         _callMos(chainId, controllers[chainId], data);
+        bytes32 targetToken = chainTokenMapping[asset][chainId];
+        bytes32 sideAsset = keccak256(abi.encode(chainId, targetToken));
         balance[sideAsset] -= amount;
     }
 
@@ -140,8 +133,13 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     function _callMos(uint256 controllerChainid, bytes memory controller, bytes memory data)
         internal
     {
-        IMOSV3.CallData memory cData = IMOSV3.CallData(controller, data, gasLimit, 0);
-        bool success = IMOSV3(mos).transferOut(controllerChainid, cData);
+        // IMOSV3.CallData memory cData = IMOSV3.CallData(controller, data, gasLimit, 0);
+        IMOSV3.MessageData memory mData = IMOSV3.MessageData(false,IMOSV3.MessageType.CALLDATA,controller,data,gasLimit,0);
+
+        bytes memory mDataBytes = abi.encode(mData);
+
+        (uint256 amount,address receiverAddress) = IMOSV3(mos).getMessageFee(controllerChainid,address(0),500000);
+        bool success = IMOSV3(mos).transferOut{value: amount}(controllerChainid, mDataBytes,address(0));
         if (!success) revert CALL_MOS_FAIL();
     }
 
@@ -153,12 +151,12 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         mos = IMOSV3(mosAddr);
     }
 
-    // function setMappingByKash(bytes32 sideAsset, address tokenAddr) external onlyOwner {
-    //     mTokens[sideAsset] = tokenAddr;
-    // }
+    function setMtoken(bytes32 sideAsset, address tokenAddr) external onlyOwner {
+        mTokens[sideAsset] = tokenAddr;
+    }
 
-    function setMappingByTarget(bytes32 sideAsset, bytes32 tokenAddr) external onlyOwner {
-        tokenMappingByTarget[sideAsset] = tokenAddr;
+    function setChainTokenMapping(address mTokenAddr,uint256 chainId,bytes32 targetToken) external onlyOwner {
+        chainTokenMapping[mTokenAddr][chainId] = targetToken;
     }
 
     function setGasLimit(uint256 limit) external onlyOwner {
