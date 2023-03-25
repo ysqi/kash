@@ -4,10 +4,10 @@ pragma solidity 0.8.19;
 import "@openzeppelin/token/ERC20/utils/SafeERC20.sol";
 import "solmate/tokens/WETH.sol";
 import "./Vault.sol";
-import "../interfaces/IMOSV3.sol";
-import "../utils/Utils.sol";
-import "../interfaces/IVaultController.sol";
-import "../protocol/lib/upgradeable/KashUUPSUpgradeable.sol";
+import "../../interfaces/IMOSV3.sol";
+import "../../utils/Utils.sol";
+import "../../interfaces/IVaultController.sol";
+import "../../protocol/lib/upgradeable/KashUUPSUpgradeable.sol";
 import "./Error.sol";
 
 import "@openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
