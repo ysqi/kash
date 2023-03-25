@@ -37,7 +37,10 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         _;
     }
 
-    function initialize(address mosAddr, address messengerAddr, address kashPoolAddr) external {
+    function initialize(address mosAddr, address messengerAddr, address kashPoolAddr)
+        external
+        initializer
+    {
         KashUUPSUpgradeable._init();
         mos = IMOSV3(mosAddr);
         gasLimit = 5000;
