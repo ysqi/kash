@@ -76,6 +76,33 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         );
     }
 
+    function verifySignature(
+        bytes32 methodHash,
+        address caller,
+        address asset,
+        uint256 amount,
+        bytes32 onBehalfOf,
+        uint256 chainId,
+        uint256 deadline,
+        bytes memory signature
+    ) public {
+        if (block.timestamp > deadline) revert Errors.EXPIRED_DEADLINE();
+        uint256 nonce = _useNonce[caller];
+        bytes32 structHash = keccak256(
+            abi.encode(methodHash, caller, asset, amount, onBehalfOf, chainId, nonce, deadline)
+        );
+        if (
+            !SignatureCheckerUpgradeable.isValidSignatureNow(
+                caller, _hashTypedDataV4(structHash), signature
+            )
+        ) {
+            revert Errors.ILLEGAL_SIGNATURE();
+        }
+        unchecked {
+            _useNonce[caller] = nonce + 1;
+        }
+    }
+
     function withdrawDelegate(
         address caller,
         address asset,
@@ -85,28 +112,9 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         uint256 deadline,
         bytes memory signature
     ) external returns (uint256) {
-        if (block.timestamp > deadline) revert Errors.EXPIRED_DEADLINE();
-        uint256 nonce = _useNonce[caller];
-        bytes32 structHash = keccak256(
-            abi.encode(
-                _WITHDRAW_TYPEHASH,
-                caller,
-                asset,
-                amount,
-                onBehalfOf,
-                chainId,
-                nonce,
-                deadline
-            )
+        verifySignature(
+            _WITHDRAW_TYPEHASH, caller, asset, amount, onBehalfOf, chainId, deadline, signature
         );
-        if (
-            !SignatureCheckerUpgradeable.isValidSignatureNow(
-                caller, _hashTypedDataV4(structHash), signature
-            )
-        ) {
-            revert Errors.ILLEGAL_SIGNATURE();
-        }
-        _useNonce[caller]++;
         CreditLogic.executeWithraw(
             caller, asset, amount, master, _reserves, _reserveConfigs, _userConfigs
         );
@@ -138,30 +146,9 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         uint256 deadline,
         bytes memory signature
     ) external {
-        if (block.timestamp > deadline) revert Errors.EXPIRED_DEADLINE();
-        uint256 nonce = _useNonce[caller];
-
-        bytes32 structHash = keccak256(
-            abi.encode(
-                _BORROW_TYPEHASH,
-                caller,
-                asset,
-                amount,
-                onBehalfOf,
-                chainId,
-                nonce,
-                deadline
-            )
+        verifySignature(
+            _BORROW_TYPEHASH, caller, asset, amount, onBehalfOf, chainId, deadline, signature
         );
-
-        if (
-            !SignatureCheckerUpgradeable.isValidSignatureNow(
-                caller, _hashTypedDataV4(structHash), signature
-            )
-        ) {
-            revert Errors.ILLEGAL_SIGNATURE();
-        }
-        _useNonce[caller]++;
 
         DebitLogic.executeBorrow(
             caller, asset, amount, master, _reserves, _reserveConfigs, _userConfigs
