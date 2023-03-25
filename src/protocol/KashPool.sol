@@ -22,10 +22,10 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
 
     // solhint-disable-next-line var-name-mixedcase
     bytes32 private constant _WITHDRAW_TYPEHASH = keccak256(
-        "withdrawDelegate(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 deadline,bytes signature)"
+        "withdraw(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 nonce,uint256 deadline)"
     );
     bytes32 private constant _BORROW_TYPEHASH = keccak256(
-        "borrowDelegate(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 deadline,bytes signature)"
+        "borrow(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 nonce,uint256 deadline)"
     );
 
     function initialize() external initializer {
@@ -86,7 +86,7 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
 
         bytes32 structHash = keccak256(
             abi.encode(
-                _WITHDRAW_TYPEHASH, caller, asset, amount, onBehalfOf, _useNonce[caller], deadline
+                _WITHDRAW_TYPEHASH, caller,asset,amount,onBehalfOf,chainId,_useNonce[caller],deadline
             )
         );
         if (
@@ -128,7 +128,7 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
 
         bytes32 structHash = keccak256(
             abi.encode(
-                _WITHDRAW_TYPEHASH, caller, asset, amount, onBehalfOf, _useNonce[caller], deadline
+                _BORROW_TYPEHASH,caller,asset,amount,onBehalfOf,chainId,_useNonce[caller],deadline
             )
         );
 
