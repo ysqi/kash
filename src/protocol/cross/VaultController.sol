@@ -125,10 +125,13 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
     // Call MOS
     function _callMos(bytes memory data) internal {
         // IMOSV3.CallData memory cData = IMOSV3.CallData(Utils.toBytes(door), data, gasLimit, 0);
-        IMOSV3.MessageData memory mData = IMOSV3.MessageData(false,IMOSV3.MessageType.CALLDATA,Utils.toBytes(door),data,gasLimit,0);
+        IMOSV3.MessageData memory mData = IMOSV3.MessageData(
+            false, IMOSV3.MessageType.CALLDATA, Utils.toBytes(door), data, gasLimit, 0
+        );
         bytes memory mDataBytes = abi.encode(mData);
-        (uint256 amount,address receiverAddress) = IMOSV3(mos).getMessageFee(doorChainid,address(0),500000);
-        bool success = IMOSV3(mos).transferOut{ value: amount }(doorChainid, mDataBytes,address(0));
+        (uint256 amount, address receiverAddress) =
+            IMOSV3(mos).getMessageFee(doorChainid, address(0), 500000);
+        bool success = IMOSV3(mos).transferOut{ value: amount }(doorChainid, mDataBytes, address(0));
         if (!success) revert CALL_MOS_FAIL();
     }
 

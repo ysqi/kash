@@ -3,8 +3,7 @@
 pragma solidity 0.8.19;
 
 interface IMOSV3 {
-
-    enum chainType{
+    enum chainType {
         NULL,
         EVM,
         NEAR
@@ -24,14 +23,23 @@ interface IMOSV3 {
         uint256 value;
     }
 
-    function transferOut(uint256 _toChain, bytes memory _messageData,address _feeToken) external payable  returns(bool);
+    function transferOut(uint256 _toChain, bytes memory _messageData, address _feeToken)
+        external
+        payable
+        returns (bool);
 
-    function addRemoteCaller(uint256 _fromChain, bytes memory _fromAddress,bool _tag) external;
+    function addRemoteCaller(uint256 _fromChain, bytes memory _fromAddress, bool _tag) external;
 
-    function getMessageFee(uint256 _toChain, address _feeToken, uint256 _gasLimit) external view returns(uint256, address);
+    function getMessageFee(uint256 _toChain, address _feeToken, uint256 _gasLimit)
+        external
+        view
+        returns (uint256, address);
 
-    event mapMessageOut(uint256 indexed fromChain, uint256 indexed toChain,bytes32 orderId, bytes callData);
+    event mapMessageOut(
+        uint256 indexed fromChain, uint256 indexed toChain, bytes32 orderId, bytes callData
+    );
 
-    event mapMessageIn(uint256 indexed fromChain, uint256 indexed toChain, bytes32 orderId, bool executeTag);
-
+    event mapMessageIn(
+        uint256 indexed fromChain, uint256 indexed toChain, bytes32 orderId, bool executeTag
+    );
 }

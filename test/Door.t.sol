@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import "forge-std/Test.sol";
-import "../src/cross/KashDoor.sol";
+import "../src/protocol/cross/KashDoor.sol";
 import "./USDT.sol";
 import "./mocks/MockPool.sol";
 import "../src/utils/Utils.sol";
@@ -19,7 +19,7 @@ contract DoorTest is Test {
         door.initialize(makeAddr("mos"), makeAddr("messenger"), address(pool));
 
         bytes32 sideAsset = keccak256(abi.encode(5, address(usdt)));
-        door.setMappingByTarget(sideAsset, Utils.toBytes32(address(usdt)));
+        // door.setMtoken(sideAsset, Utils.toBytes32(address(usdt)));
 
         door.setPool(address(pool));
     }

@@ -18,7 +18,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     uint256 public gasLimit;
 
     mapping(bytes32 => address) public mTokens;
-    mapping(address mtoken => mapping (uint256 chainid => bytes32 targetToken)) chainTokenMapping;
+    mapping(address mtoken => mapping(uint256 chainid => bytes32 targetToken)) chainTokenMapping;
     mapping(uint256 chainid => bytes controller) public controllers;
     mapping(bytes32 => uint256) public balance;
 
@@ -134,12 +134,15 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         internal
     {
         // IMOSV3.CallData memory cData = IMOSV3.CallData(controller, data, gasLimit, 0);
-        IMOSV3.MessageData memory mData = IMOSV3.MessageData(false,IMOSV3.MessageType.CALLDATA,controller,data,gasLimit,0);
+        IMOSV3.MessageData memory mData =
+            IMOSV3.MessageData(false, IMOSV3.MessageType.CALLDATA, controller, data, gasLimit, 0);
 
         bytes memory mDataBytes = abi.encode(mData);
 
-        (uint256 amount,address receiverAddress) = IMOSV3(mos).getMessageFee(controllerChainid,address(0),500000);
-        bool success = IMOSV3(mos).transferOut{value: amount}(controllerChainid, mDataBytes,address(0));
+        (uint256 amount, address receiverAddress) =
+            IMOSV3(mos).getMessageFee(controllerChainid, address(0), 500000);
+        bool success =
+            IMOSV3(mos).transferOut{ value: amount }(controllerChainid, mDataBytes, address(0));
         if (!success) revert CALL_MOS_FAIL();
     }
 
@@ -155,7 +158,10 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         mTokens[sideAsset] = tokenAddr;
     }
 
-    function setChainTokenMapping(address mTokenAddr,uint256 chainId,bytes32 targetToken) external onlyOwner {
+    function setChainTokenMapping(address mTokenAddr, uint256 chainId, bytes32 targetToken)
+        external
+        onlyOwner
+    {
         chainTokenMapping[mTokenAddr][chainId] = targetToken;
     }
 
