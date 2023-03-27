@@ -160,6 +160,29 @@ contract CounterTest is Test {
             );
         }
 
-        // (, uint256 totalCollateralETH, uint256 totalDebtETH,,,,) = pool.getUserAccountData(alice);
+        ReserveData memory usdtReserveData =
+            usdtReserve.pool.getReserveData(address(usdtReserve.asset));
+
+        // after 1 day
+        skip(10 days);
+
+        // borrow 2u
+        {
+            assertEq(
+                2 * 1e18
+                    + uint256(usdtReserveData.currentVariableBorrowRate).wadMul(2 * 1e18) * (10 days),
+                usdtReserve.debitToken.balanceOf(alice),
+                "borrow = principal plus 10days interest"
+            );
+        }
+
+        {
+            assertEq(
+                100 * 1e18
+                    + uint256(usdtReserveData.currentLiquidityRate).wadMul(100 * 1e18) * (10 days),
+                usdtReserve.creditToken.balanceOf(alice),
+                " cash = principal plus 10days interest"
+            );
+        }
     }
 }
