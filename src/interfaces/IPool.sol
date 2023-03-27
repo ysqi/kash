@@ -216,15 +216,12 @@ interface IPool {
     function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode)
         external;
 
-    function withdraw(address asset, uint256 amount, address onBehalfOf)
-        external
-        returns (uint256);
+    function withdraw(address asset, uint256 amount, address onBehalfOf) external;
 
     function borrow(address asset, uint256 amount, address onBehalfOf) external;
 
     function repay(address asset, uint256 amount, uint256 interestRateMode, address onBehalfOf)
-        external
-        returns (uint256);
+        external;
 
     /**
      * @notice Returns the user account data across all the reserves

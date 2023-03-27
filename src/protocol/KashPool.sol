@@ -118,7 +118,7 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         uint256 chainId,
         uint256 deadline,
         bytes memory signature
-    ) external returns (uint256) {
+    ) external {
         verifySignature(
             _WITHDRAW_TYPEHASH, caller, asset, amount, onBehalfOf, chainId, deadline, signature
         );
@@ -129,10 +129,7 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         IKashCrossDoor(master).handleWithdraw(caller, chainId, asset, onBehalfOf, amount);
     }
 
-    function withdraw(address asset, uint256 amount, address onBehalfOf)
-        external
-        returns (uint256)
-    {
+    function withdraw(address asset, uint256 amount, address onBehalfOf) external {
         CreditLogic.executeWithraw(
             msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs, _userConfigs
         );
@@ -166,7 +163,6 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
 
     function repay(address asset, uint256 amount, uint256 interestRateMode, address onBehalfOf)
         external
-        returns (uint256)
     {
         DebitLogic.executeRepay(
             msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs, _userConfigs
@@ -219,6 +215,23 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
 
     function getReserveAddressById(uint16 id) external view returns (address) {
         return _reserveList[id];
+    }
+
+    function getUserReserveDetails(address user)
+        external
+        view
+        returns (UserReserveFullData memory)
+    {
+        return UserLogic.getUserReserveDetails(
+            QueryUserDataParams({
+                user: user,
+                userconfig: _userConfigs[user],
+                reservesCount: _reserveCount,
+                oracle: oracle
+            }),
+            _reserves,
+            _reserveList
+        );
     }
 
     function getUserAccountData(address user)

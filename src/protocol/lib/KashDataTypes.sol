@@ -11,6 +11,21 @@ struct InitReserveParams {
     uint16 maxNumberReserves;
 }
 
+struct UserReserveFullData {
+    UserReserveSummary summary;
+    UserReserveItem[] items;
+}
+
+struct UserReserveSummary {
+    uint256 totalCollateral;
+    uint256 totalDebt;
+    uint256 availableBorrows;
+    uint256 currentLiquidationThreshold;
+    uint256 ltv;
+    uint256 healthFactor;
+    uint256 totalDiscounting;
+}
+
 struct QueryUserDataParams {
     address user;
     UserConfigurationMap userconfig;
@@ -18,7 +33,7 @@ struct QueryUserDataParams {
     address oracle;
 }
 
-struct UserReserveData {
+struct UserReserveItem {
     address asset;
     uint256 assetPrice;
     uint256 collateralRate;
