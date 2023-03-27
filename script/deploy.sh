@@ -5,6 +5,19 @@ ret_val=""
 
 ZERO_ADDRESS="0x0000000000000000000000000000000000000000"
 
+deployMToken(){
+  name=$1
+  symbol=$2
+  echo "deploy mtoken contract"
+  if  is_exsit  "$symbol" ; then
+    echo "skip deploy when $symbol exist"
+  else
+    loadValue "door" "MINER"
+    cmd="forge create src/protocol/cross/MToken.sol:MToken $commargs --json --constructor-args $name $symbol $MINER "
+    deployContract "$symbol" "$cmd"
+  fi
+}
+
 deployDoor(){
   changeNetwork "map_test"
 
@@ -68,7 +81,7 @@ deployVault(){
       # deploy implement
     cmd="forge create src/Vault.sol:Vault $commargs --json --constructor-args $1 $2"
     deployContract "vault" "$cmd"
-    
+
   fi
 }
 
@@ -82,4 +95,6 @@ case $1 in
 "Vault")
   deployVault $2 $3
   ;;
+"deployAssetToken")
+  deployMToken $2 $3
 esac
