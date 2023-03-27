@@ -8,4 +8,6 @@ library Errors {
     error NO_PERMISSION();
     error ILLEGAL_SIGNATURE();
     error EXPIRED_DEADLINE();
+    error EMPTY_ADDRESS();
+    error INVALID_PRICE();
 }

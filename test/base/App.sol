@@ -7,6 +7,7 @@ import "../../src/protocol/KashPool.sol";
 import "../../src/protocol/KashCreditToken.sol";
 import "../../src/protocol/KashDebitToken.sol";
 import "../../src/protocol/lib/InterestRateModel.sol";
+import "../../src/protocol/lib/KashOracle.sol";
 
 import "../mocks/MockERC20.sol";
 import "@openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
@@ -21,16 +22,20 @@ struct ReserveState {
 
 contract App is Test {
     KashPool public pool;
+    KashOracle public oracle;
 
     address public admin;
 
     constructor() {
+        oracle = new KashOracle();
+
         pool = KashPool(
             address(
                 new ERC1967Proxy(
                     address(new KashPool()),
                     abi.encodeWithSelector(
-                        KashPool.initialize.selector
+                        KashPool.initialize.selector,
+                        address(oracle)
                     )
                 )
             )
@@ -54,6 +59,7 @@ contract App is Test {
           decimal
         );
         KashDebitToken debitToken = new KashDebitToken(
+          address(asset),
           string.concat( "Kash debit token ",symbol),
          string.concat(  "c_",symbol),
           decimal
@@ -89,5 +95,9 @@ contract App is Test {
         reserve.asset.approve(address(address(reserve.creditToken)), amount);
         reserve.pool.supply(address(reserve.asset), amount, user, 0);
         vm.stopPrank();
+    }
+
+    function setOraclePrice(address asset, uint256 price) external {
+        oracle.setPrice(asset, price);
     }
 }

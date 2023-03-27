@@ -22,55 +22,62 @@ library ReserveLogic {
         uint256 variableBorrowIndex,
         uint256 liquidityIndex
     );
+    event ReserveInterestRatesUpdated(
+        address asset, uint256 currentVariableBorrowRate, uint256 currentLiquidityRate
+    );
+
+    function getRealLiquidityIndex(ReserveData storage reserve) internal view returns (uint256) {
+        uint40 currentTime = uint40(block.timestamp);
+        if (reserve.lastUpdateTimestamp >= currentTime) {
+            return reserve.liquidityIndex;
+        }
+        uint256 rate = reserve.currentLiquidityRate * (currentTime - reserve.lastUpdateTimestamp);
+        return reserve.liquidityIndex + rate.wadMul(reserve.liquidityIndex);
+    }
+
+    function getRealBorrowIndex(ReserveData storage reserve) internal view returns (uint256) {
+        uint40 currentTime = uint40(block.timestamp);
+        if (reserve.lastUpdateTimestamp >= currentTime) {
+            return reserve.variableBorrowIndex;
+        }
+        uint256 rate =
+            reserve.currentVariableBorrowRate * (currentTime - reserve.lastUpdateTimestamp);
+        return reserve.variableBorrowIndex + rate.wadMul(reserve.liquidityIndex);
+    }
 
     function updateState(ReserveData storage reserve, address asset) internal {
         uint40 currentTime = uint40(block.timestamp);
         // every block only update one time.
-        if (reserve.lastUpdateTimestamp >= currentTime) {
-            return;
-        }
-        uint256 rate =
-            reserve.currentVariableBorrowRate * (currentTime - reserve.lastUpdateTimestamp);
+        if (reserve.lastUpdateTimestamp >= currentTime) return;
 
-        if (reserve.variableBorrowIndex == 0) {
-            reserve.variableBorrowIndex = WadMath.WAD.safeCastTo128();
-        }
+        uint256 nextBorrowIndex = getRealBorrowIndex(reserve);
+        uint256 nextLiquidityIndex = getRealLiquidityIndex(reserve);
 
-        uint256 newBorrowIndex =
-            reserve.variableBorrowIndex + rate.wadMul(reserve.variableBorrowIndex);
-        if (newBorrowIndex == 0) {
-            newBorrowIndex = WadMath.WAD;
-        }
+        uint256 nextTotalBorrows = IDebitToken(reserve.variableDebtTokenAddress).scaledTotalSupply()
+            .wadMul(nextBorrowIndex);
 
-        //  totalBorrows =  index *  scaledTotalSupply
-        uint256 totalBorrows = uint256(reserve.variableBorrowIndex).wadMul(
-            IDebitToken(reserve.variableDebtTokenAddress).scaledTotalSupply()
-        );
-
-        //  totalSupply =  index * scaledTotalSupply
         ICreditToken creditToken = ICreditToken(reserve.creditTokenAddress);
+
         uint256 cash = IERC20(asset).balanceOf(address(creditToken));
-        uint256 scaledCash = creditToken.scaledTotalSupply();
-        uint256 currentLiquidityRate =
-            scaledCash == 0 ? WadMath.WAD : (cash + totalBorrows).wadDiv(scaledCash);
 
-        uint256 newLiquidityIndex =
-            reserve.liquidityIndex + uint256(reserve.liquidityIndex).wadMul(currentLiquidityRate);
-        if (newLiquidityIndex == 0) {
-            newLiquidityIndex = WadMath.WAD;
-        }
+        uint256 nextBorrowInterestRate = IInterestRateStrategy(reserve.interestRateStrategyAddress)
+            .borrowRate(cash, nextTotalBorrows, 0);
+        uint256 newLiquidityInterestRate = IInterestRateStrategy(
+            reserve.interestRateStrategyAddress
+        ).supplyRate(cash, nextTotalBorrows, 0, 0);
 
-        uint256 newInterestRates = IInterestRateStrategy(reserve.interestRateStrategyAddress)
-            .borrowRate(IERC20(asset).balanceOf(reserve.creditTokenAddress), totalBorrows, 0);
-
-        reserve.currentVariableBorrowRate = newInterestRates.safeCastTo128();
-        reserve.liquidityIndex = newLiquidityIndex.safeCastTo128();
-        reserve.variableBorrowIndex = newBorrowIndex.safeCastTo128();
-        reserve.currentLiquidityRate = currentLiquidityRate.safeCastTo128();
+        reserve.currentVariableBorrowRate = nextBorrowInterestRate.safeCastTo128();
+        reserve.liquidityIndex = nextLiquidityIndex.safeCastTo128();
+        reserve.variableBorrowIndex = nextBorrowIndex.safeCastTo128();
+        reserve.currentLiquidityRate = newLiquidityInterestRate.safeCastTo128();
         reserve.lastUpdateTimestamp = currentTime;
 
         emit ReserveStateUpdated(
-            asset, newInterestRates, currentLiquidityRate, newBorrowIndex, newLiquidityIndex
+            asset,
+            nextBorrowInterestRate,
+            newLiquidityInterestRate,
+            nextBorrowInterestRate,
+            nextLiquidityIndex
         );
     }
 
@@ -80,42 +87,20 @@ library ReserveLogic {
         uint256 liquidityAdded,
         uint256 liquidityTaken
     ) internal {
-        //  totalBorrows =  index *  scaledTotalSupply
-        uint256 totalBorrows = uint256(reserve.variableBorrowIndex).wadMul(
-            IDebitToken(reserve.variableDebtTokenAddress).scaledTotalSupply()
-        );
-
-        //  totalSupply =  index * scaledTotalSupply
+        uint256 totalBorrows = IDebitToken(reserve.variableDebtTokenAddress).totalSupply();
         ICreditToken creditToken = ICreditToken(reserve.creditTokenAddress);
-        uint256 cash = IERC20(asset).balanceOf(address(creditToken));
-        uint256 scaledCash = creditToken.scaledTotalSupply();
-        uint256 currentLiquidityRate = scaledCash == 0
-            ? WadMath.WAD
-            : (cash + totalBorrows - liquidityTaken + liquidityAdded).wadDiv(scaledCash);
+        uint256 nextCash =
+            IERC20(asset).balanceOf(address(creditToken)) - liquidityTaken + liquidityAdded;
 
-        uint256 newLiquidityIndex =
-            reserve.liquidityIndex + uint256(reserve.liquidityIndex).wadMul(currentLiquidityRate);
+        uint256 nextBorrowInterestRate = IInterestRateStrategy(reserve.interestRateStrategyAddress)
+            .borrowRate(nextCash, totalBorrows, 0);
+        uint256 newLiquidityInterestRate = IInterestRateStrategy(
+            reserve.interestRateStrategyAddress
+        ).supplyRate(nextCash, totalBorrows, 0, 0);
 
-        uint256 newInterestRates = IInterestRateStrategy(reserve.interestRateStrategyAddress)
-            .borrowRate(cash - liquidityTaken + liquidityAdded, totalBorrows, 0);
+        reserve.currentVariableBorrowRate = nextBorrowInterestRate.safeCastTo128();
+        reserve.currentLiquidityRate = nextBorrowInterestRate.safeCastTo128();
 
-        reserve.currentVariableBorrowRate = newInterestRates.safeCastTo128();
-
-        reserve.liquidityIndex = newLiquidityIndex.safeCastTo128();
-        reserve.currentLiquidityRate = currentLiquidityRate.safeCastTo128();
-    }
-
-    function getUserBalance(ReserveData storage reserve, address user)
-        internal
-        view
-        returns (uint256 supplies, uint256 borrows)
-    {
-        ICreditToken cToken = ICreditToken(reserve.creditTokenAddress);
-
-        supplies = cToken.balanceOf(user).wadMul(reserve.liquidityIndex);
-
-        borrows = ICreditToken(reserve.variableDebtTokenAddress).balanceOf(user).wadMul(
-            reserve.variableBorrowIndex
-        );
+        emit ReserveInterestRatesUpdated(asset, nextBorrowInterestRate, newLiquidityInterestRate);
     }
 }

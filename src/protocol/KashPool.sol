@@ -7,6 +7,7 @@ import "./lib/logic/SpaceLogic.sol";
 import "./lib/logic/CreditLogic.sol";
 import "./lib/logic/UserLogic.sol";
 import "./lib/logic/DebitLogic.sol";
+import "./lib/logic/DebitLogic.sol";
 import "./lib/helpers/Errors.sol";
 import "./lib/KashConstants.sol";
 import "./lib/upgradeable/KashUUPSUpgradeable.sol";
@@ -33,10 +34,14 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         "borrow(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 nonce,uint256 deadline)"
     );
 
-    function initialize() external initializer {
+    function initialize(address oracle_) external initializer {
+        if (oracle_ == address(0)) revert Errors.EMPTY_ADDRESS();
+
         KashUUPSUpgradeable._init();
 
         EIP712Upgradeable.__EIP712_init("KashPool", "v1");
+
+        oracle = oracle_;
     }
 
     function setMaster(address addr) external onlyOwner {
@@ -130,7 +135,7 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         uint256 chainId,
         uint256 deadline,
         bytes memory signature
-    ) external returns (uint256) {
+    ) external {
         verifySignature(
             _WITHDRAW_TYPEHASH, caller, asset, amount, onBehalfOf, chainId, deadline, signature
         );
@@ -141,10 +146,7 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         IKashCrossDoor(master).handleWithdraw(caller, chainId, asset, onBehalfOf, amount);
     }
 
-    function withdraw(address asset, uint256 amount, address onBehalfOf)
-        external
-        returns (uint256)
-    {
+    function withdraw(address asset, uint256 amount, address onBehalfOf) external {
         CreditLogic.executeWithraw(
             msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs, _userConfigs
         );
@@ -178,7 +180,6 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
 
     function repay(address asset, uint256 amount, uint256 interestRateMode, address onBehalfOf)
         external
-        returns (uint256)
     {
         DebitLogic.executeRepay(
             msg.sender, asset, amount, onBehalfOf, _reserves, _reserveConfigs, _userConfigs
@@ -208,6 +209,14 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         return _userConfigs[user];
     }
 
+    function getReserveRealLiquidityIndex(address asset) external view returns (uint256) {
+        return _reserves[asset].getRealLiquidityIndex();
+    }
+
+    function getReserveRealBorrowIndex(address asset) external view returns (uint256) {
+        return _reserves[asset].getRealBorrowIndex();
+    }
+
     function getReserveData(address asset) external view returns (ReserveData memory) {
         return _reserves[asset];
     }
@@ -225,12 +234,22 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         return _reserveList[id];
     }
 
-    // struct QueryUserDataParams {
-    //     address user;
-    //     UserConfigurationMap userconfig;
-    //     uint16 reservesCount;
-    //     address oracle;
-    // }
+    function getUserReserveDetails(address user)
+        external
+        view
+        returns (UserReserveFullData memory)
+    {
+        return UserLogic.getUserReserveDetails(
+            QueryUserDataParams({
+                user: user,
+                userconfig: _userConfigs[user],
+                reservesCount: _reserveCount,
+                oracle: oracle
+            }),
+            _reserves,
+            _reserveList
+        );
+    }
 
     function getUserAccountData(address user)
         external

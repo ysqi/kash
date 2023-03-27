@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import "../KashDataTypes.sol";
 import "../helpers/Errors.sol";
 import "../../../interfaces/ICreditToken.sol";
-import "../../../interfaces/IOracle.sol";
+import "../../../interfaces/IPriceOracle.sol";
 import "../../../libaryes/WadMath.sol";
 
 import "./ReserveLogic.sol";
@@ -64,7 +64,7 @@ library UserLogic {
             if (hasSupply(params.userconfig, i) || hasBorrow(params.userconfig, i)) {
                 address asset = reserveList[i];
 
-                UserReserveData memory detail = getUserAccountDetailData(asset, params, reserveData);
+                UserReserveItem memory detail = getUserAccountDetailData(asset, params, reserveData);
 
                 totalCollateral += detail.totalSupply.wadMul(detail.assetPrice);
                 totalDebt += detail.totalBorrows.wadMul(detail.assetPrice);
@@ -73,11 +73,11 @@ library UserLogic {
             }
         }
 
-        currentLiquidationThreshold = 0.8 * 1e18; // fixed value 80%
+        currentLiquidationThreshold = 0.9 * 1e18; // fixed value 90%
         uint256 borrowLimit = totalDiscounting.wadMul(currentLiquidationThreshold);
 
         ltv = totalDebt.wadDiv(totalCollateral);
-        healthFactor = totalDebt.wadDiv(totalDiscounting);
+        healthFactor = totalDebt.wadDiv(borrowLimit);
         availableBorrows = borrowLimit > totalDebt ? borrowLimit - totalDebt : 0;
 
         return (
@@ -94,16 +94,39 @@ library UserLogic {
         address asset,
         QueryUserDataParams memory params,
         mapping(address => ReserveData) storage reserveData
-    ) internal view returns (UserReserveData memory detail) {
+    ) internal view returns (UserReserveItem memory detail) {
         ReserveData storage reserve = reserveData[asset];
-        (detail.totalSupply, detail.totalBorrows) =
-            ReserveLogic.getUserBalance(reserve, params.user);
+        ICreditToken cToken = ICreditToken(reserve.creditTokenAddress);
+        detail.totalSupply = cToken.balanceOf(params.user);
+        detail.totalBorrows = IDebitToken(reserve.variableDebtTokenAddress).balanceOf(params.user);
 
         //price
-        (, detail.assetPrice) = IOracle(params.oracle).getLastPrice(asset);
+        (, detail.assetPrice) = IPriceOracle(params.oracle).getLastPrice(asset);
         // TODO: check update time
         // TODO: need use decimals
         // TODO: collateral rate=80%
         detail.collateralRate = 0.8 * 1e18; //80%
+    }
+
+    function getUserReserveDetails(
+        QueryUserDataParams memory params,
+        mapping(address => ReserveData) storage reserveData,
+        mapping(uint16 => address) storage reserveList
+    ) internal view returns (UserReserveFullData memory result) {
+        result.items = new UserReserveItem[](params.reservesCount);
+
+        for (uint16 i = 0; i < params.reservesCount; i++) {
+            if (hasSupply(params.userconfig, i) || hasBorrow(params.userconfig, i)) {
+                address asset = reserveList[i];
+
+                result.items[i] = getUserAccountDetailData(asset, params, reserveData);
+
+                uint256 price = result.items[i].assetPrice;
+                result.summary.totalCollateral += result.items[i].totalSupply.wadMul(price);
+                result.summary.totalDebt += result.items[i].totalBorrows.wadMul(price);
+                result.summary.totalDiscounting +=
+                    result.items[i].totalSupply.wadMul(price).wadMul(result.items[i].collateralRate);
+            }
+        }
     }
 }
