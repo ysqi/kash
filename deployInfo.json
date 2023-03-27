@@ -4,8 +4,8 @@
     "pool": "0x0e3392D389A9f07Bf262137324dDa2336fd6b3a9",
     "mos": "0xb6c1b689291532d11172fb4c204bf13169ec0dca",
     "messenger": "0xb6c1b689291532d11172fb4c204bf13169ec0dca",
-    "doorImpl": "0x4C6980bE12b0D92a1Eeb7babB78858B3045FFF6B",
-    "door": "0x62eddDe4c947EcC957fb6442b1472BDbfdCc54A7"
+    "doorImpl": "0xC30dE75eC527ce7eE23280257b28BD95ca53b2d4",
+    "door": "0x4fAE90C5ec94D559abCaD7B26fbfB142D75f0fD6"
   },
   "bsc_test": {
     "chain": 97,

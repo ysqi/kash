@@ -13,7 +13,7 @@ deployDoor(){
     echo "skip deploy when exist"
   else
       # deploy implement
-    cmd="forge create src/cross/KashDoor.sol:KashDoor $commargs --json"
+    cmd="forge create src/protocol/cross/KashDoor.sol:KashDoor $commargs --json"
     deployContract "doorImpl" "$cmd"
     # load var
     loadValue "doorImpl" "IMPL"
@@ -22,8 +22,8 @@ deployDoor(){
     loadValue "messenger" "messenger"
 
     # deploy proxy
-    initializeData="$(cast calldata "initialize(address mosAddr,address messengerAddr,address kashPoolAddr)" \
-                  "$mos" "$messenger" "$pool")"
+    initializeData="$(cast calldata "initialize(address mosAddr,address messengerAddr)" \
+                  "$mos" "$messenger")"
     checkErr
     cmd="forge create ./lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy $commargs  --json --constructor-args $IMPL $initializeData"
     deployContract "door" "$cmd"
