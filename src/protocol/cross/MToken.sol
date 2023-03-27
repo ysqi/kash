@@ -2,10 +2,9 @@
 pragma solidity 0.8.19;
 
 import "@openzeppelin/token/ERC20/ERC20.sol";
-import "@openzeppelin/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/access/Ownable.sol";
 
-contract MToken is ERC20, ERC20Burnable, Ownable {
+contract MToken is ERC20, Ownable {
     constructor(string memory name, string memory symbol, address door) ERC20(name, symbol) {
         _transferOwnership(door);
     }

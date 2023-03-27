@@ -101,4 +101,8 @@ contract CounterTest is Test {
 
         // bob get more eth
     }
+
+    function testAddT() external {
+        console.log(address(pool));
+    }
 }

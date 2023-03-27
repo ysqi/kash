@@ -16,6 +16,10 @@ import "@openzeppelin-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import "@openzeppelin-upgradeable/utils/cryptography/SignatureCheckerUpgradeable.sol";
 
 contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceStorage {
+    bytes32 private constant _TYPE_HASH = keccak256(
+        "EIP712Domain(string name,string version,uint256 chainid,address verifyingContract)"
+    );
+
     modifier onlyMaster() {
         if (master != msg.sender) revert Errors.NO_PERMISSION();
         _;
@@ -101,6 +105,21 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         unchecked {
             _useNonce[caller] = nonce + 1;
         }
+    }
+
+    function _hashTypedDataV4(bytes32 structHash)
+        internal
+        view
+        virtual
+        override
+        returns (bytes32)
+    {
+        bytes32 buildDomainSeparator = keccak256(
+            abi.encode(
+                _TYPE_HASH, _EIP712NameHash(), _EIP712VersionHash(), block.chainid, address(this)
+            )
+        );
+        return ECDSAUpgradeable.toTypedDataHash(buildDomainSeparator, structHash);
     }
 
     function withdrawDelegate(

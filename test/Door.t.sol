@@ -99,7 +99,8 @@ contract DoorTest is Test, Sign {
         );
 
         vm.startPrank(owner);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, hash);
+        uint256 key = privateKey;
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(key, hash);
 
         return abi.encode(v, r, s);
     }
@@ -122,8 +123,8 @@ contract DoorTest is Test, Sign {
                         keccak256(
                             "EIP712Domain(string name,string version,uint256 chainid,address verifyingContract)"
                         ),
-                        keccak256(bytes("Kash DAPP")),
-                        keccak256(bytes("1")),
+                        keccak256(bytes("KashPool")),
+                        keccak256(bytes("v1")),
                         212,
                         verifycontract
                     )
@@ -131,7 +132,7 @@ contract DoorTest is Test, Sign {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "withdrawDelegate(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 deadline,bytes signature)"
+                            "withdraw(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 deadline,bytes signature)"
                         ),
                         caller,
                         asset,
@@ -143,5 +144,34 @@ contract DoorTest is Test, Sign {
                 )
             )
         );
+    }
+
+    bytes32 private constant _WITHDRAW_TYPEHASH = keccak256(
+        "withdraw(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 nonce,uint256 deadline)"
+    );
+    bytes32 private constant _BORROW_TYPEHASH = keccak256(
+        "borrow(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 nonce,uint256 deadline)"
+    );
+
+    function testSign() public {
+        address caller = 0x6Ecb1e890b68DFa299DdD4856cf30a3d38867B47;
+        address asset = 0x0d18c17aef629f4ea57C6D1372695a7641204925;
+        uint256 amount = 1000000000000000000000;
+        bytes32 onBehalfOf = 0x00000000000000000000000055876b3f4c456a203836f33387d110dea0beff73;
+        uint256 chainId = 5;
+        uint256 nonce = 0;
+        uint256 deadline = 1779739860;
+        console2.log(block.chainid);
+        console2.log(address(pool));
+
+        bytes memory sign =
+            hex"3eada6a4795b4ec691a2ea8df0aba34871e6bf5af497a6892d0611831a9fb7c767ef49423b0ee4f993daf195a21b6184ceda188ac1d0e3ec91459fbf602297111b";
+        pool.verifySignature(
+            _WITHDRAW_TYPEHASH, caller, asset, amount, onBehalfOf, chainId, deadline, sign
+        );
+    }
+
+    function testAddT() external {
+        console.log(address(pool));
     }
 }
