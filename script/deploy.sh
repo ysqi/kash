@@ -18,6 +18,8 @@ deployMToken(){
   fi
 }
 
+
+
 deployDoor(){
   changeNetwork "map_test"
 

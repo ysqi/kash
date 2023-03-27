@@ -3,12 +3,40 @@
     "chain": 212,
     "doorImpl": "0xC30dE75eC527ce7eE23280257b28BD95ca53b2d4",
     "door": "0x4fAE90C5ec94D559abCaD7B26fbfB142D75f0fD6",
-    "kUSDT": "0xA0a121C77a3317Cf31B14b5a3089C2DAc70b5c3B",
-    "kUSDC": "0xFF8A1A10cFa544e9F1A77E121D4F393293A7Fa3E",
-    "kETH": "0xaBB9ADE0BC8C132d4F75c15538370E66A0734518",
-    "kWBTC": "0xc44D60Da3ed467227C81BFAAC31b882880Cc13e8"
-  },
-  "bsc_test": {
-    "chain": 97
+    "oracle": "0xDdb2395921228Af6f49837a4acdc758E49065214",
+    "KashPool": "0x8C6Df8525528C5bd90A738AF88Ff070f4d7D4a59",
+    "market": {
+      "USDT": {
+        "decimals": 18,
+        "rateModel": "0xaB25d8890AE24002385c7CA6B4418Ec4CE5ad0dc",
+        "ktoken": "0xA0a121C77a3317Cf31B14b5a3089C2DAc70b5c3B",
+        "ctoken": "0x302889C956b2ab6905bc05F504Ee26D5Da5c8f16",
+        "dtoken": "0x40c160227Af0EDBcA1Eb14f397198fa4D369b0b3"
+      },
+      "USDC": {
+        "decimals": 18,
+        "rateModel": "0xaB25d8890AE24002385c7CA6B4418Ec4CE5ad0dc",
+        "ktoken": "0xFF8A1A10cFa544e9F1A77E121D4F393293A7Fa3E",
+        "ctoken": "0x802004EbaeE2768E506315C4b61A0c57Ca1891Ca",
+        "dtoken": "0xe20Ff48675b90b752F1C8d351d803D0e1CCDBb10"
+      },
+      "ETH": {
+        "decimals": 18,
+        "rateModel": "0xaB25d8890AE24002385c7CA6B4418Ec4CE5ad0dc",
+        "ktoken": "0xaBB9ADE0BC8C132d4F75c15538370E66A0734518",
+        "ctoken": "0x97378B54D1B20667f257a2F5cb07C2cC848933cd",
+        "dtoken": "0xD57063b3A9730aE298CC4a0dD91bF0e610A5a345"
+      },
+      "WBTC": {
+        "decimals": 18,
+        "rateModel": "0xaB25d8890AE24002385c7CA6B4418Ec4CE5ad0dc",
+        "ktoken": "0xc44D60Da3ed467227C81BFAAC31b882880Cc13e8",
+        "ctoken": "0xD2b8faF9Da8f160A7e6ec2011da1B23AEE3896d7",
+        "dtoken": "0x6492172aA6ef7c4a313b2a48eA1Cc05eb0A55C30"
+      },
+      "bsc_test": {
+        "chain": 97
+      }
+    }
   }
 }
