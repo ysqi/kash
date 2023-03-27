@@ -17,6 +17,8 @@ import "@openzeppelin-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import "@openzeppelin-upgradeable/utils/cryptography/SignatureCheckerUpgradeable.sol";
 
 contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceStorage {
+    using ReserveLogic for ReserveData;
+
     bytes32 private constant _TYPE_HASH = keccak256(
         "EIP712Domain(string name,string version,uint256 chainid,address verifyingContract)"
     );
