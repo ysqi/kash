@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import "../interfaces/ICreditToken.sol";
+import "../interfaces/IPool.sol";
 import "./lib/helpers/Errors.sol";
 import "./lib/KashSpaceStorage.sol";
 import "./lib/logic/SpaceLogic.sol";
@@ -39,6 +40,19 @@ contract KashCreditToken is ICreditToken, ERC20Permit {
         return _underlyingAsset;
     }
 
+    function balanceOf(address account) public view override(ERC20, IERC20) returns (uint256) {
+        uint256 amount = super.balanceOf(account);
+        if (amount == 0) return 0;
+        return amount.wadMul(IPool(pool).getReserveRealLiquidityIndex(_underlyingAsset));
+    }
+
+    function totalSupply() public view override(ERC20, IERC20) returns (uint256) {
+        uint256 amount = super.totalSupply();
+        if (amount == 0) return 0;
+        uint256 index = IPool(pool).getReserveRealLiquidityIndex(_underlyingAsset);
+        return amount.wadMul(index);
+    }
+
     function mint(address user, address onBehalfOf, uint256 amount, uint256 index)
         external
         onlyPool
@@ -74,8 +88,8 @@ contract KashCreditToken is ICreditToken, ERC20Permit {
         return super.totalSupply();
     }
 
-    function scaledBalanceOf(address user) external pure returns (uint256) {
-        revert("NO");
+    function scaledBalanceOf(address user) external view returns (uint256) {
+        return super.balanceOf(user);
     }
 
     // TODO: safe check before transfer credit.

@@ -111,7 +111,6 @@ contract InterestRateModel {
     /**
      * @notice 求存款放贷利率（区块）
      *     @param cash 市场尚未被借出的资产放贷数量
-     *     ,supplies 市场存款数量
      *     @param borrows 市场已被借出的资产数量
      *     @param reserves 平台对该资产的储备金
      *     @param reserveFactorMantissa  当前市场储备因子
@@ -119,7 +118,6 @@ contract InterestRateModel {
      */
     function supplyRate(
         uint256 cash,
-        uint256, //supplies,
         uint256 borrows,
         uint256 reserves,
         uint256 reserveFactorMantissa

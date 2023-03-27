@@ -97,9 +97,9 @@ contract DoorTest is Test, Sign {
         bytes32 hash = makeWithdrawHash(
             verifyContract, caller, asset, amount, onBehalfOf, chainId, deadline, nonce
         );
-
+        uint256 key = privateKey;
         vm.startPrank(owner);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, hash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(key, hash);
 
         return abi.encode(v, r, s);
     }

@@ -9,7 +9,6 @@ interface IInterestRateStrategy {
 
     function supplyRate(
         uint256 cash,
-        uint256 supplies,
         uint256 borrows,
         uint256 reserves,
         uint256 reserveFactorMantissa

@@ -372,6 +372,9 @@ interface IPool {
      */
     function getReserveAddressById(uint16 id) external view returns (address);
 
+    function getReserveRealLiquidityIndex(address asset) external view returns (uint256);
+    function getReserveRealBorrowIndex(address asset) external view returns (uint256);
+
     // /**
     //  * @notice Allows a user to use the protocol in eMode
     //  * @param categoryId The id of the category

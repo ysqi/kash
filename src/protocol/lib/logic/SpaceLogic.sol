@@ -53,6 +53,9 @@ library SpaceLogic {
         reserve.stableDebtTokenAddress = params.stableDebtTokenAddress;
         reserve.variableDebtTokenAddress = params.variableDebtTokenAddress;
         reserve.interestRateStrategyAddress = params.interestRateStrategyAddress;
+        reserve.liquidityIndex = 1e18; //wad
+        reserve.variableBorrowIndex = 1e18; //wad
+        // TODO: more default value
 
         //find id
         for (uint16 i = 0; i < params.reservesCount; i++) {

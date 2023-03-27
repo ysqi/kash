@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import "../interfaces/IDebitToken.sol";
+import "../interfaces/IPool.sol";
 import "./lib/helpers/Errors.sol";
 import "./lib/KashSpaceStorage.sol";
 import "./lib/logic/SpaceLogic.sol";
@@ -14,20 +15,37 @@ import "@openzeppelin/token/ERC20/extensions/ERC20Permit.sol";
 contract KashDebitToken is IDebitToken, ERC20Permit {
     using WadMath for uint256;
 
+    address private _underlyingAsset;
+
     uint8 private _decimals;
 
     mapping(address => uint256) private _userStates;
     address public pool;
 
-    constructor(string memory _name, string memory _symbol, uint8 decimals_)
+    constructor(address asset, string memory _name, string memory _symbol, uint8 decimals_)
         ERC20(_name, _symbol)
         ERC20Permit(_name)
     {
+        _underlyingAsset = asset;
         _decimals = decimals_;
     }
 
     function decimals() public view override returns (uint8) {
         return _decimals;
+    }
+
+    function balanceOf(address account) public view override(ERC20, IERC20) returns (uint256) {
+        uint256 amount = super.balanceOf(account);
+        if (amount == 0) return 0;
+        return amount.wadMul(IPool(pool).getReserveRealBorrowIndex(_underlyingAsset));
+    }
+
+    function totalSupply() public view override(ERC20, IERC20) returns (uint256) {
+        uint256 amount = super.totalSupply();
+        if (amount == 0) return 0;
+
+        uint256 index = IPool(pool).getReserveRealBorrowIndex(_underlyingAsset);
+        return amount.wadMul(index);
     }
 
     //  借款/index= Scaled

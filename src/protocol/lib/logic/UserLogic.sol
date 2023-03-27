@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import "../KashDataTypes.sol";
 import "../helpers/Errors.sol";
 import "../../../interfaces/ICreditToken.sol";
-import "../../../interfaces/IOracle.sol";
+import "../../../interfaces/IPriceOracle.sol";
 import "../../../libaryes/WadMath.sol";
 
 import "./ReserveLogic.sol";
@@ -73,11 +73,11 @@ library UserLogic {
             }
         }
 
-        currentLiquidationThreshold = 0.8 * 1e18; // fixed value 80%
+        currentLiquidationThreshold = 0.9 * 1e18; // fixed value 90%
         uint256 borrowLimit = totalDiscounting.wadMul(currentLiquidationThreshold);
 
         ltv = totalDebt.wadDiv(totalCollateral);
-        healthFactor = totalDebt.wadDiv(totalDiscounting);
+        healthFactor = totalDebt.wadDiv(borrowLimit);
         availableBorrows = borrowLimit > totalDebt ? borrowLimit - totalDebt : 0;
 
         return (
@@ -96,11 +96,12 @@ library UserLogic {
         mapping(address => ReserveData) storage reserveData
     ) internal view returns (UserReserveData memory detail) {
         ReserveData storage reserve = reserveData[asset];
-        (detail.totalSupply, detail.totalBorrows) =
-            ReserveLogic.getUserBalance(reserve, params.user);
+        ICreditToken cToken = ICreditToken(reserve.creditTokenAddress);
+        detail.totalSupply = cToken.balanceOf(params.user);
+        detail.totalBorrows = IDebitToken(reserve.variableDebtTokenAddress).balanceOf(params.user);
 
         //price
-        (, detail.assetPrice) = IOracle(params.oracle).getLastPrice(asset);
+        (, detail.assetPrice) = IPriceOracle(params.oracle).getLastPrice(asset);
         // TODO: check update time
         // TODO: need use decimals
         // TODO: collateral rate=80%
