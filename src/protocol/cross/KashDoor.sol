@@ -49,7 +49,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
 
     function _mintAndApprove(bytes32 sideAsset, uint256 amount) internal {
         // mint
-        MToken(mTokens[sideAsset]).mint(address(this), amount);
+        MToken(mTokens[sideAsset]).mint(amount);
         //approve
         ReserveData memory reserveData = IPool(kashPool).getReserveData(mTokens[sideAsset]);
         address creditToken = reserveData.creditTokenAddress;
@@ -99,7 +99,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         );
 
         // burn mtoken
-        MToken(asset).burn(address(this), amount);
+        MToken(asset).burn(amount);
 
         _callMos(chainId, controllers[chainId], data);
 
@@ -123,7 +123,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
             amount
         );
 
-        MToken(asset).burn(address(this), amount);
+        MToken(asset).burn(amount);
 
         _callMos(chainId, controllers[chainId], data);
         bytes32 targetToken = chainTokenMapping[asset][chainId];
