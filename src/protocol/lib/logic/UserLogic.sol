@@ -97,6 +97,8 @@ library UserLogic {
     ) internal view returns (UserReserveItem memory detail) {
         ReserveData storage reserve = reserveData[asset];
         ICreditToken cToken = ICreditToken(reserve.creditTokenAddress);
+
+        detail.asset = asset;
         detail.totalSupply = cToken.balanceOf(params.user);
         detail.totalBorrows = IDebitToken(reserve.variableDebtTokenAddress).balanceOf(params.user);
 
@@ -116,6 +118,8 @@ library UserLogic {
         result.items = new UserReserveItem[](params.reservesCount);
 
         for (uint16 i = 0; i < params.reservesCount; i++) {
+            result.items[i].asset = reserveList[i];
+
             if (hasSupply(params.userconfig, i) || hasBorrow(params.userconfig, i)) {
                 address asset = reserveList[i];
 
