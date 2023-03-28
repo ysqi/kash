@@ -31,7 +31,7 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
     event Migrate(address indexed token, address oldVault, address newVault);
 
     modifier onlyMessenger() {
-        if (msg.sender != messenger) revert CALLER_NOT_MESSENGER();
+        if (messenger == address(0) || msg.sender != messenger) revert CALLER_NOT_MESSENGER();
         _;
     }
 
@@ -173,7 +173,7 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
     }
 
     function setDoor(address doorAddress, uint256 chainId) external onlyOwner {
-        IMOSV3(mos).addRemoteCaller(chainId,abi.encodePacked(doorAddress),true);
+        IMOSV3(mos).addRemoteCaller(chainId, abi.encodePacked(doorAddress), true);
         door = doorAddress;
         doorChainid = chainId;
     }
@@ -198,5 +198,5 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
         payable(msg.sender).transfer(amount);
     }
 
-    receive() external payable {}
+    receive() external payable { }
 }

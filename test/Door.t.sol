@@ -28,13 +28,15 @@ contract DoorTest is Test, Sign {
         ethUSDT = new MockERC20("ethUSDT","ethUSDT",18);
 
         door = KashDoor(
-            address(
-                new ERC1967Proxy(
+            payable(
+                address(
+                    new ERC1967Proxy(
                     address(new KashDoor()),
                     abi.encodeWithSelector(
                         KashDoor.initialize.selector,
                             makeAddr("mos"), makeAddr("messenger"),
                             address(pool)
+                    )
                     )
                 )
             )

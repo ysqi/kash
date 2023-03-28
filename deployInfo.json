@@ -38,5 +38,16 @@
         "chain": 97
       }
     }
+  },
+  "bsc_test": {
+    "controler": "0xe9EeC579739e9ff748AE827185487059a649a0FA",
+    "usdt": "0x271Ad6b86D22535281AAe72dC9b3066636E254c0",
+    "usdtVault": "0xb9DEF5F50A6aedbE4DBB68a68F9dEe3Db541f67E",
+    "usdc": "0xF339A95Ae48A8E64842B16BC7c55D5d37c1105AC",
+    "usdcVault": "0xB477bBF4Cb256Af82354285E7BE16e8Fbd0Ba4A7",
+    "eth": "0x014F3F48b2D33D31Be556A15F15B665CfE3E6e2F",
+    "ethVault": "0xF12E832bDc888e2c78FeBa1b3946496ad1108D0E",
+    "btc": "0x73Dd182D43A605feEf1550Af808acfc2DfDfe883",
+    "btcVault": "0xF71f348B4931CE3c01208a2B517F4d10aE3C0c2E"
   }
 }
