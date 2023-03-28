@@ -24,7 +24,9 @@ contract KashDoorScript is Script {
         vm.startBroadcast(deployerPrivateKey);
         KashDoor impl = new KashDoor();
         proxy.upgradeTo(address(impl));
-        KashDoor(address(proxy)).transferOwnership(0x1A0bf00A35350b90a8bDbF220175FdC0C3c8eAcE);
+        KashDoor(payable(address(proxy))).transferOwnership(
+            0x1A0bf00A35350b90a8bDbF220175FdC0C3c8eAcE
+        );
         vm.stopBroadcast();
     }
 }
