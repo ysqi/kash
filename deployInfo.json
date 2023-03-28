@@ -9,6 +9,7 @@
     "kWBTC": "0xc44D60Da3ed467227C81BFAAC31b882880Cc13e8"
   },
   "bsc_test": {
-    "chain": 97
+    "chain": 97,
+    "mUSDT": "0x5d2680c3F9793840c75b2124d3c320cB4AFdA289"
   }
 }

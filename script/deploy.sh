@@ -18,6 +18,18 @@ deployMToken(){
   fi
 }
 
+deployAssetToken(){
+  name=$1
+  symbol=$2
+  echo "deploy assetToken contract"
+  if  is_exsit  "$symbol" ; then
+    echo "skip deploy when $symbol exist"
+  else
+    cmd="forge create test/Token.sol:Token $commargs --json --constructor-args $name $symbol "
+    deployContract "$symbol" "$cmd"
+  fi
+}
+
 deployDoor(){
   changeNetwork "map_test"
 
@@ -95,6 +107,8 @@ case $1 in
 "Vault")
   deployVault $2 $3
   ;;
+"deployMToken")
+  deployMToken $2 $3;;
 "deployAssetToken")
-  deployMToken $2 $3
+  deployAssetToken $2 $3;;
 esac

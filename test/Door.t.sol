@@ -4,7 +4,6 @@ pragma solidity 0.8.19;
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "../src/protocol/cross/KashDoor.sol";
-import "./USDT.sol";
 import "./mocks/MockPool.sol";
 import "../src/utils/Utils.sol";
 import "../src/protocol/KashPool.sol";
