@@ -19,7 +19,7 @@ contract KashDoorScript is Script {
     function setUp() public { }
 
     function update() external {
-        UUPSUpgradeable proxy = UUPSUpgradeable(payable(0x8C6Df8525528C5bd90A738AF88Ff070f4d7D4a59));
+        UUPSUpgradeable proxy = UUPSUpgradeable(payable(0x4fAE90C5ec94D559abCaD7B26fbfB142D75f0fD6));
         deployerPrivateKey = vm.envUint("RAW_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         KashDoor impl = new KashDoor();
