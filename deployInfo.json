@@ -1,38 +1,39 @@
 {
   "map_test": {
     "chain": 212,
-    "doorImpl": "0xC30dE75eC527ce7eE23280257b28BD95ca53b2d4",
-    "door": "0x4fAE90C5ec94D559abCaD7B26fbfB142D75f0fD6",
-    "oracle": "0xDdb2395921228Af6f49837a4acdc758E49065214",
-    "KashPool": "0x8C6Df8525528C5bd90A738AF88Ff070f4d7D4a59",
+    "doorImpl": "",
+    "door": "0x8ADc0e2aFd67776df2F8946aA0649d8C19867C20",
+    "oracle": "0x991A6C5Ed37a71877627B223Ad90d0ba915ed8f7",
+    "KashPool": "0x5310C07Cd8fc53bb47dDbFC8d86E1F0bcE213d17",
+    "InterestRateModel": "0x18655E1f7311f5D7B734636c38F2fe8EE09F3b82",
     "market": {
       "USDT": {
         "decimals": 18,
-        "rateModel": "0xaB25d8890AE24002385c7CA6B4418Ec4CE5ad0dc",
-        "ktoken": "0xA0a121C77a3317Cf31B14b5a3089C2DAc70b5c3B",
-        "ctoken": "0x302889C956b2ab6905bc05F504Ee26D5Da5c8f16",
-        "dtoken": "0x40c160227Af0EDBcA1Eb14f397198fa4D369b0b3"
+        "rateModel": "",
+        "ktoken": "0x02096654B0f3597a6760D29370B2199E8C08e730",
+        "ctoken": "0x47ED834DB9d58Da37a7500483618BA0f0eD2AF21",
+        "dtoken": "0x98E84d9D030Fbe88f6d7CaF610DB3081E82143c6"
       },
       "USDC": {
         "decimals": 18,
-        "rateModel": "0xaB25d8890AE24002385c7CA6B4418Ec4CE5ad0dc",
-        "ktoken": "0xFF8A1A10cFa544e9F1A77E121D4F393293A7Fa3E",
-        "ctoken": "0x802004EbaeE2768E506315C4b61A0c57Ca1891Ca",
-        "dtoken": "0xe20Ff48675b90b752F1C8d351d803D0e1CCDBb10"
+        "rateModel": "",
+        "ktoken": "0x928a4804d2db43f97e9703927EfA8dd95Ca1D3ae",
+        "ctoken": "0x8682FC0b371B345Eb58B3Aeee99C1f92513B79F4",
+        "dtoken": "0x352a3A616b017568d806056A6Ec713Cf31758e7C"
       },
       "ETH": {
         "decimals": 18,
-        "rateModel": "0xaB25d8890AE24002385c7CA6B4418Ec4CE5ad0dc",
-        "ktoken": "0xaBB9ADE0BC8C132d4F75c15538370E66A0734518",
-        "ctoken": "0x97378B54D1B20667f257a2F5cb07C2cC848933cd",
-        "dtoken": "0xD57063b3A9730aE298CC4a0dD91bF0e610A5a345"
+        "rateModel": "",
+        "ktoken": "0x27953EABe525687b10802B37CA6789026830Df6E",
+        "ctoken": "0xc77E80935C935B9E30A0dD2B10D2A18fE88e7025",
+        "dtoken": "0xf552291972969AA7ad6F6e17027EbCA7254aB2Ab"
       },
       "WBTC": {
         "decimals": 18,
-        "rateModel": "0xaB25d8890AE24002385c7CA6B4418Ec4CE5ad0dc",
-        "ktoken": "0xc44D60Da3ed467227C81BFAAC31b882880Cc13e8",
-        "ctoken": "0x33fDC50a4BCf5afE7660437dD0C4853658d12B1D",
-        "dtoken": "0x1DE852113168Ed8f50B20dC53816E53bdc31CB5F"
+        "rateModel": "",
+        "ktoken": "0xFC1b80975BeADa59B69d2ec96C6bc990403A8f1A",
+        "ctoken": "0x5a340EbA6B10E7F2Bb64e8187D6067d86527E698",
+        "dtoken": "0x29BB5EA3a04659D0Bd5731E364649dF0BDfF317c"
       },
       "bsc_test": {
         "chain": 97
