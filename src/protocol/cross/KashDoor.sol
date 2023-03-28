@@ -37,10 +37,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         _;
     }
 
-    function initialize(address mosAddr, address messengerAddr)
-        external
-        initializer
-    {
+    function initialize(address mosAddr, address messengerAddr) external initializer {
         KashUUPSUpgradeable._init();
         mos = IMOSV3(mosAddr);
         gasLimit = 5000;
@@ -176,7 +173,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     }
 
     function setController(uint256 chainId, bytes calldata controller) external onlyOwner {
-        IMOSV3(mos).addRemoteCaller(chainId,controller,true);
+        IMOSV3(mos).addRemoteCaller(chainId, controller, true);
         controllers[chainId] = controller;
     }
 
@@ -184,5 +181,10 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         payable(msg.sender).transfer(amount);
     }
 
-    receive() external payable {}
+    function execute(address target, bytes memory data) external onlyOwner {
+        (bool success,) = target.call(data);
+        require(success, "F");
+    }
+
+    receive() external payable { }
 }
