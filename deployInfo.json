@@ -31,8 +31,8 @@
         "decimals": 18,
         "rateModel": "0xaB25d8890AE24002385c7CA6B4418Ec4CE5ad0dc",
         "ktoken": "0xc44D60Da3ed467227C81BFAAC31b882880Cc13e8",
-        "ctoken": "0xD2b8faF9Da8f160A7e6ec2011da1B23AEE3896d7",
-        "dtoken": "0x6492172aA6ef7c4a313b2a48eA1Cc05eb0A55C30"
+        "ctoken": "0x33fDC50a4BCf5afE7660437dD0C4853658d12B1D",
+        "dtoken": "0x1DE852113168Ed8f50B20dC53816E53bdc31CB5F"
       },
       "bsc_test": {
         "chain": 97
@@ -49,5 +49,14 @@
     "ethVault": "0xF12E832bDc888e2c78FeBa1b3946496ad1108D0E",
     "btc": "0x73Dd182D43A605feEf1550Af808acfc2DfDfe883",
     "btcVault": "0xF71f348B4931CE3c01208a2B517F4d10aE3C0c2E"
+  },
+  "goeril": {
+    "controler": "0x8F4e75EA6eE5095E4FD7385592476dabDde36099",
+    "usdt": "0x1A0bf00A35350b90a8bDbF220175FdC0C3c8eAcE",
+    "usdtVault": "0xd60f21d6106c6107e2b942d63d62123c2fc447bb",
+    "usdc": "0xE83E46471Cb6100fE7Da6b010581861b12211F8e",
+    "usdcVault": "0x96E6D9da10A8EF7b632858Bb21B120fb1DBF83EB",
+    "eth": "0x9CaE18a1FA384E3280F2fd320DC9AE1feFBb99E8",
+    "ethVault": "0x597BF56E87fE8cc28D9B1Fb4946E92bF85b5D18b",
   }
 }
