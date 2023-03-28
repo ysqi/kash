@@ -29,4 +29,18 @@ contract KashDoorScript is Script {
         );
         vm.stopBroadcast();
     }
+
+    function updateOld() external {
+        UUPSUpgradeable proxy = UUPSUpgradeable(payable(0x62eddDe4c947EcC957fb6442b1472BDbfdCc54A7));
+        deployerPrivateKey = vm.envUint("RAW_PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
+
+        KashDoor impl = new KashDoor();
+        proxy.upgradeTo(address(impl));
+
+        KashDoor(payable(address(proxy))).transferOwnership(
+            0x1A0bf00A35350b90a8bDbF220175FdC0C3c8eAcE
+        );
+        vm.stopBroadcast();
+    }
 }
