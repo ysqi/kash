@@ -176,6 +176,13 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     }
 
     function setController(uint256 chainId, bytes calldata controller) external onlyOwner {
+        IMOSV3(mos).addRemoteCaller(chainId,controller,true);
         controllers[chainId] = controller;
     }
+
+    function withdrawFee(uint256 amount) external onlyOwner {
+        payable(msg.sender).transfer(amount);
+    }
+
+    receive() external payable {}
 }

@@ -46,7 +46,7 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
         uint256 chainid,
         address payable wethAddress,
         address mosAddr
-    ) external {
+    ) external initializer {
         KashUUPSUpgradeable._init();
         messenger = messengerAddress;
         door = doorAddress;
@@ -173,6 +173,7 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
     }
 
     function setDoor(address doorAddress, uint256 chainId) external onlyOwner {
+        IMOSV3(mos).addRemoteCaller(chainId,abi.encodePacked(doorAddress),true);
         door = doorAddress;
         doorChainid = chainId;
     }
@@ -192,4 +193,10 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
         vaults[token] = newVault;
         emit Migrate(token, oldVault, newVault);
     }
+
+    function withdrawFee(uint256 amount) external onlyOwner {
+        payable(msg.sender).transfer(amount);
+    }
+
+    receive() external payable {}
 }
