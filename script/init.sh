@@ -40,6 +40,13 @@ loadValue(){
   checkErr
 }
 
+loadValueByKey(){
+  ret_val=$(jq .$1 deployInfo.json -r)
+  checkErr
+  export $2="$ret_val"
+  checkErr
+}
+
 deployContract(){
   if is_exsit "$1" ; then
    echo "skip deploy when exist"
