@@ -171,7 +171,14 @@ contract DoorTest is Test, Sign {
         );
     }
 
-    function testAddT() external {
-        console.log(address(pool));
+    function testSideAssetHash() external {
+        address targetToken = 0x0d18c17aef629f4ea57C6D1372695a7641204925;
+        uint256 chainId = 5;
+
+        console2.logBytes(abi.encode(chainId, targetToken));
+        bytes32 sideAsset1 = keccak256(abi.encode(chainId, targetToken));
+        bytes32 sideAsset2 = keccak256(abi.encode(chainId, bytes32(uint256(uint160(targetToken)))));
+
+        assertEq(sideAsset1, sideAsset2);
     }
 }
