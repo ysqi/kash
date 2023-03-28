@@ -21,16 +21,16 @@ contract TestOPScript is Script {
         vm.startBroadcast(deployerPrivateKey);
     }
 
-    // function handleSupply(address who, address asset, uint256 amount) external {
-    //     // KashDoor door = KashDoor(0x4fAE90C5ec94D559abCaD7B26fbfB142D75f0fD6);
-
-    //     // function handleSupply(bytes32 sideAsset, bytes32 suppler, uint256 amount, bytes calldata data)
-    //     // bytes32 sideAsset = keccak256(abi.encodePacked(IERC20Metadata(asset).symbol()));
-    //     // door.handleSupply()
-    // }
+    function handleSupply(address who, address targetAsset, uint256 targetChainId, uint256 amount)
+        external
+    {
+        KashDoor door = KashDoor(payable(0x4fAE90C5ec94D559abCaD7B26fbfB142D75f0fD6));
+        bytes32 sideAsset = keccak256(abi.encode(targetChainId, targetAsset));
+        door.handleSupply(sideAsset, bytes32(uint256(uint160(who))), amount, abi.encode(uint16(1)));
+    }
 
     function addAsset(address asset, uint256 targetChainId, address targetAsset) public {
-        bytes32 sideAsset = keccak256(abi.encode(block.chainid, targetAsset));
+        bytes32 sideAsset = keccak256(abi.encode(targetChainId, targetAsset));
         KashDoor door = KashDoor(payable(0x4fAE90C5ec94D559abCaD7B26fbfB142D75f0fD6));
         door.setMtoken(sideAsset, asset);
         door.setChainTokenMapping(asset, targetChainId, bytes32(uint256(uint160(targetAsset))));
