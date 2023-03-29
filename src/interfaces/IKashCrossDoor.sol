@@ -9,8 +9,13 @@ interface IKashCrossDoor {
      * @param amount is the amount of supply.
      * @param data is the other params.
      */
-    function handleSupply(bytes32 sideAsset, bytes32 suppler, uint256 amount, bytes calldata data)
-        external;
+    function handleSupply(
+        bytes32 sideAsset,
+        bytes32 suppler,
+        uint256 amount,
+        bytes calldata data,
+        uint256 nonce
+    ) external;
 
     /**
      * @notice Processing borrow requests from vault chains.
@@ -19,8 +24,13 @@ interface IKashCrossDoor {
      * @param amount is the borrowing amount.
      * @param data is the other params.
      */
-    function handleRepay(bytes32 sideAsset, bytes32 borrower, uint256 amount, bytes calldata data)
-        external;
+    function handleRepay(
+        bytes32 sideAsset,
+        bytes32 borrower,
+        uint256 amount,
+        bytes calldata data,
+        uint256 nonce
+    ) external;
 
     /**
      * @notice Processing withdraw requests on MOS chain.

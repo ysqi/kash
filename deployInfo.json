@@ -37,7 +37,8 @@
       "bsc_test": {
         "chain": 97
       }
-    }
+    },
+    "KashDoorImpl": "0x38595205e6903E61448544380Ac35Ded65B244Eb"
   },
   "bsc_test": {
     "chainId": 97,
@@ -50,7 +51,7 @@
     "vault_ETH": "0xF12E832bDc888e2c78FeBa1b3946496ad1108D0E",
     "WBTC": "0x73Dd182D43A605feEf1550Af808acfc2DfDfe883",
     "vault_WBTC": "0xF71f348B4931CE3c01208a2B517F4d10aE3C0c2E",
-    "controllerImpl": "0x6b3F175F602D54CA1F045dD25240e3394a3D3a15"
+    "controllerImpl": "0xD5d7f6f4c04Ae082632248e262b5A0b23F99C2Ea"
   },
   "goerli": {
     "chainId": 5,

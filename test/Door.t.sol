@@ -58,7 +58,7 @@ contract DoorTest is Test, Sign {
         uint16 refCode = 1;
         bytes memory data = abi.encode(refCode);
 
-        door.handleSupply(sideAsset, suppler, amount, data);
+        door.handleSupply(sideAsset, suppler, amount, data, 0);
 
         assertEq(mUSDTReserve.asset.balanceOf(address(mUSDTReserve.creditToken)), amount);
         assertEq(mUSDTReserve.creditToken.balanceOf(alice), amount);

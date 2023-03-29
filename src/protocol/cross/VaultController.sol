@@ -8,6 +8,7 @@ import "../../interfaces/IMOSV3.sol";
 import "../../utils/Utils.sol";
 import "../../interfaces/IVaultController.sol";
 import "../../protocol/lib/upgradeable/KashUUPSUpgradeable.sol";
+import "../../protocol/lib/helpers/Errors.sol";
 import "./Error.sol";
 
 import "@openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
@@ -22,6 +23,10 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
     uint256 public gasLimit;
     WETH public weth;
     mapping(address => address) public vaults;
+
+    // the mail box for cross chain.
+    mapping(bytes32 => bool) public receivedMail;
+    mapping(address => uint256) public crossMailNonce;
 
     event CreateVault(address indexed token, address vault);
     event Supply(address indexed user, address token, uint256 amount);
@@ -67,12 +72,14 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
         IERC20(token).safeTransferFrom(msg.sender, vaults[token], amount);
         bytes32 sideAsset = keccak256(abi.encode(block.chainid, token));
         bytes memory data = abi.encodeWithSignature(
-            "handleSupply(bytes32,bytes32,uint256,bytes)",
+            "handleSupply(bytes32,bytes32,uint256,bytes,uint256)",
             sideAsset,
             Utils.toBytes32(msg.sender),
             amount,
-            customData
+            customData,
+            crossMailNonce[msg.sender]
         );
+        crossMailNonce[msg.sender]++;
         _callMos(data);
         emit Supply(msg.sender, token, amount);
     }
@@ -82,12 +89,14 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
         weth.transfer(vaults[address(weth)], msg.value);
         bytes32 sideAsset = keccak256(abi.encode(block.chainid, address(weth)));
         bytes memory data = abi.encodeWithSignature(
-            "handleSupply(bytes32,bytes32,uint256,bytes)",
+            "handleSupply(bytes32,bytes32,uint256,bytes,uint256)",
             sideAsset,
             Utils.toBytes32(msg.sender),
             msg.value,
-            customData
+            customData,
+            crossMailNonce[msg.sender]
         );
+        crossMailNonce[msg.sender]++;
         _callMos(data);
         emit Supply(msg.sender, address(weth), msg.value);
     }
@@ -99,12 +108,14 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
         IERC20(token).safeTransferFrom(msg.sender, vaults[token], amount);
         bytes32 sideAsset = keccak256(abi.encode(block.chainid, token));
         bytes memory data = abi.encodeWithSignature(
-            "handleRepay(bytes32,bytes32,uint256,bytes)",
+            "handleRepay(bytes32,bytes32,uint256,bytes,uint256)",
             sideAsset,
             Utils.toBytes32(msg.sender),
             amount,
-            customData
+            customData,
+            crossMailNonce[msg.sender]
         );
+        crossMailNonce[msg.sender]++;
         _callMos(data);
         emit Repay(msg.sender, token, amount);
     }
@@ -112,12 +123,14 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
     function repayETH(bytes calldata customData) external payable checkVault(address(weth)) {
         bytes32 sideAsset = keccak256(abi.encode(block.chainid, address(weth)));
         bytes memory data = abi.encodeWithSignature(
-            "handleRepay(bytes32,bytes32,uint256,bytes)",
+            "handleRepay(bytes32,bytes32,uint256,bytes,uint256)",
             sideAsset,
             Utils.toBytes32(msg.sender),
             msg.value,
-            customData
+            customData,
+            crossMailNonce[msg.sender]
         );
+        crossMailNonce[msg.sender]++;
         _callMos(data);
         emit Repay(msg.sender, address(weth), msg.value);
     }
@@ -135,20 +148,28 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
         if (!success) revert CALL_MOS_FAIL();
     }
 
-    function withdraw(address token, address to, uint256 amount)
+    function withdraw(address token, address to, uint256 amount, uint256 nonce)
         external
         onlyMessenger
         checkVault(token)
     {
+        bytes32 msgId = keccak256(abi.encode("withdraw", block.chainid, token, to, amount, nonce));
+        if (receivedMail[msgId]) revert Errors.REPEAT_CROSS_MSG();
+        receivedMail[msgId] = true;
+
         _withdraw(token, to, amount);
         emit Withdraw(to, token, amount);
     }
 
-    function borrow(address token, address to, uint256 amount)
+    function borrow(address token, address to, uint256 amount, uint256 nonce)
         external
         onlyMessenger
         checkVault(token)
     {
+        bytes32 msgId = keccak256(abi.encode("borrow", block.chainid, token, to, amount, nonce));
+        if (receivedMail[msgId]) revert Errors.REPEAT_CROSS_MSG();
+        receivedMail[msgId] = true;
+
         _withdraw(token, to, amount);
         emit Borrow(to, token, amount);
     }

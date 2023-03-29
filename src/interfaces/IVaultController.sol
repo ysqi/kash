@@ -10,9 +10,9 @@ interface IVaultController {
 
     function repayETH(bytes calldata customData) external payable;
 
-    function withdraw(address token, address to, uint256 amount) external;
+    function withdraw(address token, address to, uint256 amount, uint256 nonce) external;
 
-    function borrow(address token, address to, uint256 amount) external;
+    function borrow(address token, address to, uint256 amount, uint256 nonce) external;
 
     function migrate(address token, address newVault) external;
 

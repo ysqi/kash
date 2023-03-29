@@ -10,4 +10,5 @@ library Errors {
     error EXPIRED_DEADLINE();
     error EMPTY_ADDRESS();
     error INVALID_PRICE();
+    error REPEAT_CROSS_MSG();
 }

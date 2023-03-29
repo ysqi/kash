@@ -10,6 +10,7 @@ import "./Error.sol";
 import "./MToken.sol";
 import "@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol";
 import "../../protocol/lib/KashDataTypes.sol";
+import "../../protocol/lib/helpers/Errors.sol";
 
 contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     IMOSV3 public mos;
@@ -21,6 +22,10 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     mapping(address mtoken => mapping(uint256 chainid => bytes32 targetToken)) chainTokenMapping;
     mapping(uint256 chainid => bytes controller) public controllers;
     mapping(bytes32 => uint256) public balance;
+
+    // the mail box for cross chain.
+    mapping(bytes32 => bool) public receivedMail;
+    mapping(address => uint256) public crossMailNonce;
 
     modifier onlyMessenger() {
         // TODO: just for test
@@ -54,10 +59,17 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         MToken(mTokens[sideAsset]).approve(creditToken, amount);
     }
 
-    function handleSupply(bytes32 sideAsset, bytes32 suppler, uint256 amount, bytes calldata data)
-        external
-        override /* onlyMessenger */
-    {
+    function handleSupply(
+        bytes32 sideAsset,
+        bytes32 suppler,
+        uint256 amount,
+        bytes calldata data,
+        uint256 nonce
+    ) external override /* onlyMessenger */ {
+        bytes32 msgId = keccak256(abi.encode("supply", sideAsset, suppler, amount, data, nonce));
+        if (receivedMail[msgId]) revert Errors.REPEAT_CROSS_MSG();
+        receivedMail[msgId] = true;
+
         uint16 referralCode = abi.decode(data, (uint16));
         address user = Utils.fromBytes32(suppler);
 
@@ -67,10 +79,17 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         balance[sideAsset] += amount;
     }
 
-    function handleRepay(bytes32 sideAsset, bytes32 borrower, uint256 amount, bytes calldata data)
-        external
-        override /* onlyMessenger */
-    {
+    function handleRepay(
+        bytes32 sideAsset,
+        bytes32 borrower,
+        uint256 amount,
+        bytes calldata data,
+        uint256 nonce
+    ) external override /* onlyMessenger */ {
+        bytes32 msgId = keccak256(abi.encode("repay", sideAsset, borrower, amount, data, nonce));
+        if (receivedMail[msgId]) revert Errors.REPEAT_CROSS_MSG();
+        receivedMail[msgId] = true;
+
         uint256 interestRateMode = abi.decode(data, (uint256));
 
         _mintAndApprove(sideAsset, amount);
@@ -90,11 +109,13 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     ) external override onlyKashPool {
         // if (balance[sideAsset] < amount) revert INSUFFICIENT_VAULT_FUNDS();
         bytes memory data = abi.encodeWithSignature(
-            "function withdraw(address,address,uint256)",
+            "function withdraw(address,address,uint256,uint256)",
             Utils.fromBytes32(chainTokenMapping[asset][chainId]),
             Utils.fromBytes32(receiver),
-            amount
+            amount,
+            crossMailNonce[caller]
         );
+        crossMailNonce[caller]++;
 
         // burn mtoken
         MToken(asset).burn(amount);
@@ -115,11 +136,13 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     ) external override onlyKashPool {
         // if (balance[sideAsset] < amount) revert INSUFFICIENT_VAULT_FUNDS();
         bytes memory data = abi.encodeWithSignature(
-            "function withdraw(address,address,uint256)",
+            "function withdraw(address,address,uint256,uint256)",
             Utils.fromBytes32(chainTokenMapping[asset][chainId]),
             Utils.fromBytes32(borrower),
-            amount
+            amount,
+            crossMailNonce[caller]
         );
+        crossMailNonce[caller]++;
 
         MToken(asset).burn(amount);
 
