@@ -12,10 +12,26 @@ deployMToken(){
   if  is_exsit  "$symbol" ; then
     echo "skip deploy when $symbol exist"
   else
-    loadValue "door" "MINER"
+    loadValue "miner" "MINER"
     cmd="forge create src/protocol/cross/MToken.sol:MToken $commargs --json --constructor-args $name $symbol $MINER "
     deployContract "$symbol" "$cmd"
   fi
+}
+
+deployAssetVaultOnSide(){
+  symbol=$1
+
+  deployMToken "Kash$symbol" "$symbol"
+
+  loadValue "$symbol" "ASSET"
+  loadValue "controler" "CONTROLER"
+
+  VAULT_KEY="vault_$symbol"
+
+  cmd="forge create src/protocol/cross/Vault.sol:Vault $commargs --json --constructor-args $ASSET $CONTROLER"
+  deployContract "$VAULT_KEY" "$cmd"
+  loadValue "$VAULT_KEY" "VAULT"
+  cast send  $commargs $CONTROLER "setVault(address token, address vault)"  $ASSET $VAULT
 }
 
 deployAssetToken(){
@@ -27,6 +43,8 @@ deployAssetToken(){
   else
     cmd="forge create test/Token.sol:Token $commargs --json --constructor-args $name $symbol "
     deployContract "$symbol" "$cmd"
+
+
   fi
 }
 
@@ -55,6 +73,20 @@ deployDoor(){
   fi
 }
 
+
+updateKashDoor(){
+# deploy implement
+    cmd="forge create src/protocol/cross/KashDoor.sol:KashDoor $commargs --json"
+    deployContract "KashDoorImpl" "$cmd"
+    # load var
+    loadValue "KashDoorImpl" "IMPL"
+    loadValue "KashDoor" "PROXY"
+
+    echo "controller($PROXY) upgrade to $IMPL"
+    # update
+    cast send $commargs $PROXY "upgradeTo(address impl)"  $IMPL
+}
+
 deployController(){
   changeNetwork "bsc_test"
 
@@ -62,7 +94,7 @@ deployController(){
   if  is_exsit  "controller" ; then
     echo "skip deploy when exist"
   else
-      # deploy implement
+    # deploy implement
     cmd="forge create src/VaultController.sol:VaultController $commargs --json"
     deployContract "controllerImpl" "$cmd"
     # load var
@@ -97,18 +129,50 @@ deployVault(){
   fi
 }
 
-case $1 in
-"Door")
-  deployDoor
-  ;;
-"Controller")
-  deployController
-  ;;
-"Vault")
-  deployVault $2 $3
-  ;;
-"deployMToken")
-  deployMToken $2 $3;;
-"deployAssetToken")
-  deployAssetToken $2 $3;;
-esac
+updateControler(){
+# deploy implement
+    cmd="forge create src/protocol/cross/VaultController.sol:VaultController $commargs --json"
+    deployContract "controllerImpl" "$cmd"
+    # load var
+    loadValue "controllerImpl" "IMPL"
+    loadValue "controller" "PROXY"
+
+    echo "controller($PROXY) upgrade to $IMPL"
+    # update
+    cast send $commargs $PROXY "upgradeTo(address impl)"  $IMPL
+}
+
+updateKashPool(){
+
+  # forge script script/KashPoolUpdate.s.sol:KashPoolUpdateScript  -vvvv $commargs --slow --broadcast -s "run()"
+
+  # new kash pool
+# deploy implement
+    cmd="forge create src/protocol/KashPool.sol:KashPool $commargs --json"
+    deployContract "KashPoolImpl" "$cmd"
+    # load var
+    loadValue "KashPoolImpl" "IMPL"
+    loadValue "KashPool" "PROXY"
+
+    # update
+    cast send  $commargs $PROXY "upgradeTo(address impl)"  $IMPL
+}
+
+
+
+# 检查参数
+if [ "$#" -lt 1 ]; then
+  echo "Usage: $0 <function_name> [args...]"
+  exit 1
+fi
+
+# 根据参数调用对应的函数
+function_name="$1"
+shift # 移除第一个参数，保留剩余参数
+
+if [ "$(type -t -- "$function_name")" = "function" ]; then
+  $function_name "$@"
+else
+  echo "Error: Function '$function_name' not found"
+  exit 1
+fi

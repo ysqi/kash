@@ -1,11 +1,11 @@
 #!/bin/sh
-source .env
+# source .env
 echo "chain is: $NETWORK"
 echo "loading source: .env.$NETWORK"
 source ".env.$NETWORK"
 
 
-commargs="--private-key $RAW_PRIVATE_KEY --rpc-url $ETH_RPC_URL --from $ETH_FROM "
+commargs="--private-key $RAW_PRIVATE_KEY --rpc-url $ETH_RPC_URL"
 
 changeNetwork() {
     echo "change chain is: $1"
