@@ -11,4 +11,6 @@ library Errors {
     error EMPTY_ADDRESS();
     error INVALID_PRICE();
     error REPEAT_CROSS_MSG();
+    error MISSING_CHAINTOKENMAPPING();
+    error INSUFFICIENT_VAULT_FUNDS();
 }

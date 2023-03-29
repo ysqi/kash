@@ -19,7 +19,8 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     uint256 public gasLimit;
 
     mapping(bytes32 => address) public mTokens;
-    mapping(address mtoken => mapping(uint256 chainid => bytes32 targetToken)) chainTokenMapping;
+    mapping(address mtoken => mapping(uint256 chainid => bytes32 targetToken)) public
+        chainTokenMapping;
     mapping(uint256 chainid => bytes controller) public controllers;
     mapping(bytes32 => uint256) public balance;
 
@@ -46,7 +47,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
     function initialize(address mosAddr, address messengerAddr) external initializer {
         KashUUPSUpgradeable._init();
         mos = IMOSV3(mosAddr);
-        gasLimit = 5000;
+        gasLimit = 50000;
         messenger = messengerAddr;
     }
 
@@ -102,15 +103,15 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
 
     function handleWithdraw(
         address caller,
-        uint256 chainId,
-        address asset,
+        uint256 tragetChainId,
+        address ktoken,
         bytes32 receiver,
         uint256 amount
-    ) external override onlyKashPool {
+    ) external override /*onlyKashPool*/ {
         // if (balance[sideAsset] < amount) revert INSUFFICIENT_VAULT_FUNDS();
         bytes memory data = abi.encodeWithSignature(
-            "function withdraw(address,address,uint256,uint256)",
-            Utils.fromBytes32(chainTokenMapping[asset][chainId]),
+            "withdraw(address,address,uint256,uint256)",
+            Utils.fromBytes32(chainTokenMapping[ktoken][tragetChainId]),
             Utils.fromBytes32(receiver),
             amount,
             crossMailNonce[caller]
@@ -118,13 +119,18 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         crossMailNonce[caller]++;
 
         // burn mtoken
-        MToken(asset).burn(amount);
+        MToken(ktoken).burn(amount);
 
-        _callMos(chainId, controllers[chainId], data);
+        bytes32 targetToken = chainTokenMapping[ktoken][tragetChainId];
+        if (targetToken == 0x0) revert Errors.MISSING_CHAINTOKENMAPPING();
 
-        bytes32 targetToken = chainTokenMapping[asset][chainId];
-        bytes32 sideAsset = keccak256(abi.encode(chainId, targetToken));
+        bytes32 sideAsset = keccak256(abi.encode(tragetChainId, targetToken));
+        if (balance[sideAsset] < amount) {
+            revert Errors.INSUFFICIENT_VAULT_FUNDS();
+        }
         balance[sideAsset] -= amount;
+
+        _callMos(tragetChainId, controllers[tragetChainId], data);
     }
 
     function handleBorrow(
@@ -133,10 +139,10 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         address asset,
         bytes32 borrower,
         uint256 amount
-    ) external override onlyKashPool {
+    ) external override /*onlyKashPool*/ {
         // if (balance[sideAsset] < amount) revert INSUFFICIENT_VAULT_FUNDS();
         bytes memory data = abi.encodeWithSignature(
-            "function withdraw(address,address,uint256,uint256)",
+            "withdraw(address,address,uint256,uint256)",
             Utils.fromBytes32(chainTokenMapping[asset][chainId]),
             Utils.fromBytes32(borrower),
             amount,

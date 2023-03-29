@@ -36,7 +36,7 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
     event Migrate(address indexed token, address oldVault, address newVault);
 
     modifier onlyMessenger() {
-        if (messenger == address(0) || msg.sender != messenger) revert CALLER_NOT_MESSENGER();
+        if (messenger != address(0) && msg.sender != messenger) revert CALLER_NOT_MESSENGER();
         _;
     }
 
