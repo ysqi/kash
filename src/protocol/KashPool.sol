@@ -20,7 +20,7 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
     using ReserveLogic for ReserveData;
 
     bytes32 private constant _TYPE_HASH = keccak256(
-        "EIP712Domain(string name,string version,uint256 chainid,address verifyingContract)"
+        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
     );
 
     modifier onlyMaster() {
@@ -125,15 +125,15 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         }
     }
 
-    function _hashTypedDataV4(uint256 targetChainId, bytes32 structHash)
+    function _hashTypedDataV4(uint256 originChainId, bytes32 structHash)
         internal
         view
         returns (bytes32)
     {
-        // sigh with target chain id.
+        // sigh with origin chain id.
         bytes32 buildDomainSeparator = keccak256(
             abi.encode(
-                _TYPE_HASH, _EIP712NameHash(), _EIP712VersionHash(), targetChainId, address(this)
+                _TYPE_HASH, _EIP712NameHash(), _EIP712VersionHash(), originChainId, address(this)
             )
         );
         return ECDSAUpgradeable.toTypedDataHash(buildDomainSeparator, structHash);
