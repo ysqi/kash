@@ -140,7 +140,7 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
         bytes memory mDataBytes = abi.encode(mData);
 
         (uint256 amount, address receiverAddress) =
-            IMOSV3(mos).getMessageFee(controllerChainid, address(0), 500000);
+            IMOSV3(mos).getMessageFee(controllerChainid, address(0), gasLimit);
         bool success =
             IMOSV3(mos).transferOut{ value: amount }(controllerChainid, mDataBytes, address(0));
         if (!success) revert CALL_MOS_FAIL();
