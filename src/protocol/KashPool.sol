@@ -18,6 +18,7 @@ import "@openzeppelin-upgradeable/utils/cryptography/SignatureCheckerUpgradeable
 
 contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceStorage {
     using ReserveLogic for ReserveData;
+
     bytes32 private constant _TYPE_HASH = keccak256(
         "EIP712Domain(string name,string version,uint256 chainid,address verifyingContract)"
     );
@@ -103,7 +104,7 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         );
         if (
             !SignatureCheckerUpgradeable.isValidSignatureNow(
-                caller, _hashTypedDataV4(structHash), signature
+                caller, _hashTypedDataV4(chainId, structHash), signature
             )
         ) {
             revert Errors.ILLEGAL_SIGNATURE();
@@ -113,16 +114,15 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         }
     }
 
-    function _hashTypedDataV4(bytes32 structHash)
+    function _hashTypedDataV4(uint256 targetChainId, bytes32 structHash)
         internal
         view
-        virtual
-        override
         returns (bytes32)
     {
+        // sigh with target chain id.
         bytes32 buildDomainSeparator = keccak256(
             abi.encode(
-                _TYPE_HASH, _EIP712NameHash(), _EIP712VersionHash(), block.chainid, address(this)
+                _TYPE_HASH, _EIP712NameHash(), _EIP712VersionHash(), targetChainId, address(this)
             )
         );
         return ECDSAUpgradeable.toTypedDataHash(buildDomainSeparator, structHash);
@@ -281,6 +281,10 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
             _reserves,
             _reserveList
         );
+    }
+
+    function getNonce(address user) external view returns (uint256) {
+        return _useNonce[user];
     }
 
     function BRIDGE_PROTOCOL_FEE() external pure returns (uint256) {
