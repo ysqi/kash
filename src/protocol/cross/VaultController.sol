@@ -130,7 +130,7 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
         );
         bytes memory mDataBytes = abi.encode(mData);
         (uint256 amount, address receiverAddress) =
-            IMOSV3(mos).getMessageFee(doorChainid, address(0), 500000);
+            IMOSV3(mos).getMessageFee(doorChainid, address(0), gasLimit);
         bool success = IMOSV3(mos).transferOut{ value: amount }(doorChainid, mDataBytes, address(0));
         if (!success) revert CALL_MOS_FAIL();
     }
