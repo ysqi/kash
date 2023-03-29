@@ -30,10 +30,10 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
 
     // solhint-disable-next-line var-name-mixedcase
     bytes32 private constant _WITHDRAW_TYPEHASH = keccak256(
-        "withdraw(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 nonce,uint256 deadline)"
+        "withdraw(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 originChainId,uint256 targetChainId,uint256 nonce,uint256 deadline)"
     );
     bytes32 private constant _BORROW_TYPEHASH = keccak256(
-        "borrow(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 nonce,uint256 deadline)"
+        "borrow(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 originChainId,uint256 targetChainId,uint256 nonce,uint256 deadline)"
     );
 
     function initialize(address oracle_) external initializer {
@@ -93,18 +93,29 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         address asset,
         uint256 amount,
         bytes32 onBehalfOf,
-        uint256 chainId,
+        uint256 originChainId,
+        uint256 targetChainId,
         uint256 deadline,
         bytes memory signature
     ) public {
         if (block.timestamp > deadline) revert Errors.EXPIRED_DEADLINE();
         uint256 nonce = _useNonce[caller];
         bytes32 structHash = keccak256(
-            abi.encode(methodHash, caller, asset, amount, onBehalfOf, chainId, nonce, deadline)
+            abi.encode(
+                methodHash,
+                caller,
+                asset,
+                amount,
+                onBehalfOf,
+                originChainId,
+                targetChainId,
+                nonce,
+                deadline
+            )
         );
         if (
             !SignatureCheckerUpgradeable.isValidSignatureNow(
-                caller, _hashTypedDataV4(chainId, structHash), signature
+                caller, _hashTypedDataV4(originChainId, structHash), signature
             )
         ) {
             revert Errors.ILLEGAL_SIGNATURE();
@@ -133,18 +144,27 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         address asset,
         uint256 amount,
         bytes32 onBehalfOf,
-        uint256 chainId,
+        uint256 originChainId,
+        uint256 targetChainId,
         uint256 deadline,
         bytes memory signature
     ) external {
         verifySignature(
-            _WITHDRAW_TYPEHASH, caller, asset, amount, onBehalfOf, chainId, deadline, signature
+            _WITHDRAW_TYPEHASH,
+            caller,
+            asset,
+            amount,
+            onBehalfOf,
+            originChainId,
+            targetChainId,
+            deadline,
+            signature
         );
         CreditLogic.executeWithraw(
             caller, asset, amount, master, _reserves, _reserveConfigs, _userConfigs
         );
 
-        IKashCrossDoor(master).handleWithdraw(caller, chainId, asset, onBehalfOf, amount);
+        IKashCrossDoor(master).handleWithdraw(caller, targetChainId, asset, onBehalfOf, amount);
     }
 
     function withdraw(address asset, uint256 amount, address onBehalfOf) external {
@@ -164,19 +184,28 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         address asset,
         uint256 amount,
         bytes32 onBehalfOf,
-        uint256 chainId,
+        uint256 originChainId,
+        uint256 targetChainId,
         uint256 deadline,
         bytes memory signature
     ) external {
         verifySignature(
-            _BORROW_TYPEHASH, caller, asset, amount, onBehalfOf, chainId, deadline, signature
+            _BORROW_TYPEHASH,
+            caller,
+            asset,
+            amount,
+            onBehalfOf,
+            originChainId,
+            targetChainId,
+            deadline,
+            signature
         );
 
         DebitLogic.executeBorrow(
             caller, asset, amount, master, _reserves, _reserveConfigs, _userConfigs
         );
 
-        IKashCrossDoor(master).handleWithdraw(caller, chainId, asset, onBehalfOf, amount);
+        IKashCrossDoor(master).handleWithdraw(caller, targetChainId, asset, onBehalfOf, amount);
     }
 
     function repay(address asset, uint256 amount, uint256 interestRateMode, address onBehalfOf)

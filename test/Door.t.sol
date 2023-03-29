@@ -147,10 +147,10 @@ contract DoorTest is Test, Sign {
     }
 
     bytes32 private constant _WITHDRAW_TYPEHASH = keccak256(
-        "withdraw(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 nonce,uint256 deadline)"
+        "withdraw(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 originChainId,uint256 targetChainId,uint256 nonce,uint256 deadline)"
     );
     bytes32 private constant _BORROW_TYPEHASH = keccak256(
-        "borrow(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 chainId,uint256 nonce,uint256 deadline)"
+        "borrow(address caller,address asset,uint256 amount,bytes32 onBehalfOf,uint256 originChainId,uint256 targetChainId,uint256 nonce,uint256 deadline)"
     );
 
     function testSign() public {
@@ -167,7 +167,7 @@ contract DoorTest is Test, Sign {
         bytes memory sign =
             hex"3eada6a4795b4ec691a2ea8df0aba34871e6bf5af497a6892d0611831a9fb7c767ef49423b0ee4f993daf195a21b6184ceda188ac1d0e3ec91459fbf602297111b";
         pool.verifySignature(
-            _WITHDRAW_TYPEHASH, caller, asset, amount, onBehalfOf, chainId, deadline, sign
+            _WITHDRAW_TYPEHASH, caller, asset, amount, onBehalfOf, chainId, chainId, deadline, sign
         );
     }
 
