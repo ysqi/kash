@@ -71,7 +71,7 @@ contract InterestRateModel {
             return 0;
         }
         uint256 r = borrows.mul(1e18).div(c);
-        if (r < 1e18) {
+        if (r > 1e18) {
             return 1e18;
         }
         return r;

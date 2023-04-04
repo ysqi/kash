@@ -197,4 +197,67 @@ contract CounterTest is Test {
             );
         }
     }
+
+    function testInterestRate() external {
+        ReserveState memory usdtReserve = app.createReserve("USDT", 18);
+
+        uint256 borrows = 714533336355630733750; //714.53333636
+        uint256 cash = 3419999999999999971985; // 3420
+
+        InterestRateModel rm = InterestRateModel(usdtReserve.rateModel);
+
+        uint256 brate = rm.borrowRate(cash, borrows, 0);
+        uint256 urate = rm.utilizationRate(cash, borrows, 0);
+        console.log("brate=", brate, brate * 365 days * 100 / 1e18);
+        console.log("urate=", urate);
+
+        assertEq(brate, 1254573244);
+    }
+
+    function testBorrowRate() external {
+        ReserveState memory usdtReserve = app.createReserve("USDT", 18);
+
+        vm.label(address(usdtReserve.asset), "mUSDT");
+        vm.label(address(usdtReserve.creditToken), "cUSDT");
+        vm.label(address(usdtReserve.debitToken), "dUSDT");
+
+        // 1 usdt= $1
+        app.setOraclePrice(address(usdtReserve.asset), 1 * 1e18);
+
+        address alice = makeAddr("alice");
+        uint256 amount = 4184.5022 * 1e18;
+
+        app.supply(usdtReserve, alice, amount);
+
+        skip(1 days);
+        usdtReserve.pool.borrow(address(usdtReserve.asset), 714.5148 * 1e18, alice);
+        // after 1 day
+        skip(1 days);
+
+        ReserveData memory usdtReserveData =
+            usdtReserve.pool.getReserveData(address(usdtReserve.asset));
+
+        console.log(usdtReserveData.currentVariableBorrowRate);
+    }
+
+    function testsetReserveInterestRateStrategyAddress() external {
+        ReserveState memory usdtReserve = app.createReserve("USDT", 18);
+        ReserveState memory usdcReserve = app.createReserve("USDC", 18);
+
+        InterestRateModel newRateModel = new InterestRateModel();
+
+        vm.prank(pool.owner());
+        pool.setReserveInterestRateStrategy(address(newRateModel));
+
+        assertEq(
+            pool.getReserveData(address(usdtReserve.asset)).interestRateStrategyAddress,
+            address(newRateModel),
+            "should be newRateModel"
+        );
+        assertEq(
+            pool.getReserveData(address(usdcReserve.asset)).interestRateStrategyAddress,
+            address(newRateModel),
+            "should be newRateModel"
+        );
+    }
 }

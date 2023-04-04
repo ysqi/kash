@@ -53,19 +53,18 @@ library ReserveLogic {
         uint256 nextBorrowIndex = getRealBorrowIndex(reserve);
         uint256 nextLiquidityIndex = getRealLiquidityIndex(reserve);
 
-        uint256 nextTotalBorrows = IDebitToken(reserve.variableDebtTokenAddress).scaledTotalSupply()
-            .wadMul(nextBorrowIndex);
+        uint256 nextTotalBorrows = IDebitToken(reserve.variableDebtTokenAddress).totalSupply();
 
         ICreditToken creditToken = ICreditToken(reserve.creditTokenAddress);
 
         uint256 cash = IERC20(asset).balanceOf(address(creditToken));
+        uint256 reserveFeePoint = 0.05 * 1e18; //TODO: fixed value
 
         uint256 nextBorrowInterestRate = IInterestRateStrategy(reserve.interestRateStrategyAddress)
-            .borrowRate(cash, nextTotalBorrows, 0);
-        uint256 reserveFeePoint = 0.05 * 1e18; //TODO: fixed value
+            .borrowRate(cash, nextTotalBorrows, nextTotalBorrows.wadMul(reserveFeePoint));
         uint256 newLiquidityInterestRate = IInterestRateStrategy(
             reserve.interestRateStrategyAddress
-        ).supplyRate(cash, nextTotalBorrows, 0, reserveFeePoint);
+        ).supplyRate(cash, nextTotalBorrows, nextTotalBorrows.wadMul(reserveFeePoint), 0);
 
         reserve.currentVariableBorrowRate = nextBorrowInterestRate.safeCastTo128();
         reserve.liquidityIndex = nextLiquidityIndex.safeCastTo128();
@@ -92,15 +91,15 @@ library ReserveLogic {
         ICreditToken creditToken = ICreditToken(reserve.creditTokenAddress);
         uint256 nextCash =
             IERC20(asset).balanceOf(address(creditToken)) - liquidityTaken + liquidityAdded;
-
+        uint256 reserveFeePoint = 0.05 * 1e18; //TODO: fixed value
         uint256 nextBorrowInterestRate = IInterestRateStrategy(reserve.interestRateStrategyAddress)
-            .borrowRate(nextCash, totalBorrows, 0);
+            .borrowRate(nextCash, totalBorrows, totalBorrows.wadMul(reserveFeePoint));
         uint256 newLiquidityInterestRate = IInterestRateStrategy(
             reserve.interestRateStrategyAddress
-        ).supplyRate(nextCash, totalBorrows, 0, 0);
+        ).supplyRate(nextCash, totalBorrows, totalBorrows.wadMul(reserveFeePoint), 0);
 
         reserve.currentVariableBorrowRate = nextBorrowInterestRate.safeCastTo128();
-        reserve.currentLiquidityRate = nextBorrowInterestRate.safeCastTo128();
+        reserve.currentLiquidityRate = newLiquidityInterestRate.safeCastTo128();
 
         emit ReserveInterestRatesUpdated(asset, nextBorrowInterestRate, newLiquidityInterestRate);
     }

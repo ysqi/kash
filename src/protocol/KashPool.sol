@@ -223,6 +223,13 @@ contract KashPool is IPool, KashUUPSUpgradeable, EIP712Upgradeable, KashSpaceSto
         SpaceLogic.executeSetConfiguration(asset, _reserveConfigs, configuration);
     }
 
+    function setReserveInterestRateStrategy(address rateStrategyAddress) external onlyOwner {
+        uint16 count = _reserveCount;
+        for (uint16 i = 0; i < count; i++) {
+            _reserves[_reserveList[i]].interestRateStrategyAddress = rateStrategyAddress;
+        }
+    }
+
     function getConfiguration(address asset)
         external
         view
