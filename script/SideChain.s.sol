@@ -18,9 +18,10 @@ import "@openzeppelin/token/ERC20/extensions/IERC20Metadata.sol";
  */
 
 contract SideChainScript is Script {
+    uint256 deployerPrivateKey;
+
     function setUp() public {
-        uint256 deployerPrivateKey = vm.envUint("RAW_PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
+        deployerPrivateKey = vm.envUint("RAW_PRIVATE_KEY");
     }
 
     function initOnBSCTestnet() external {
@@ -56,10 +57,11 @@ contract SideChainScript is Script {
 
     function setVault(address controller, address token, address vault) public {
         VaultController(payable(controller)).setVault(token, vault);
-        vm.stopBroadcast();
     }
 
     function openNewValult(address controller, string memory symbol) public {
+        vm.startBroadcast(deployerPrivateKey);
+
         MToken token =
         new MToken(string.concat("Kash ",symbol),symbol,0x0046dE99a7A1C5439132dD44E16A1810bC39D6ee);
 

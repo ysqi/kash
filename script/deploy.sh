@@ -5,6 +5,11 @@ ret_val=""
 
 ZERO_ADDRESS="0x0000000000000000000000000000000000000000"
 
+deployMTokenMiner(){
+  cmd="forge create src/protocol/cross/Minter.sol:Minter $commargs --json"
+  deployContract "tokenMiner" "$cmd"
+}
+
 deployMToken(){
   name=$1
   symbol=$2
@@ -73,6 +78,12 @@ deployDoor(){
   fi
 }
 
+kashpoolSetMaster(){
+    loadValue "KashPool" "POOL"
+    loadValue "KashDoor" "DOOR"
+    # update
+    cast send  $commargs $POOL "setMaster(address)"  $DOOR
+}
 
 updateKashDoor(){
 # deploy implement

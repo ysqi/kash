@@ -48,18 +48,24 @@ loadValueByKey(){
 }
 
 deployContract(){
+
   if is_exsit "$1" ; then
-   echo "skip deploy when exist"
-  else
-    echo -e "run:\n\t$2"
-    result=$($2)
-    checkErr
-    addr=$(echo "$result" | jq ".deployedTo" -r)
-    checkErr
-    echo "deployedTo: $addr"
-    setValue "$1" "$addr"
-    checkErr
+    echo "contract exist, Do you want to continue? (Y/n)"
+    read answer
+    if [ "$answer" == "Y" ] || [ "$answer" == "y" ]; then
+      echo 'Continuing'
+    else
+      return
+    fi
   fi
+  echo -e "run:\n\t$2"
+  result=$($2)
+  checkErr
+  addr=$(echo "$result" | jq ".deployedTo" -r)
+  checkErr
+  echo "deployedTo: $addr"
+  setValue "$1" "$addr"
+  checkErr
 }
 
 is_exsit(){

@@ -19,7 +19,7 @@ contract KashPoolUpdateScript is Script {
     function setUp() public { }
 
     function run() external {
-        UUPSUpgradeable proxy = UUPSUpgradeable(payable(0x8C6Df8525528C5bd90A738AF88Ff070f4d7D4a59));
+        UUPSUpgradeable proxy = UUPSUpgradeable(payable(0x5310C07Cd8fc53bb47dDbFC8d86E1F0bcE213d17));
 
         deployerPrivateKey = vm.envUint("RAW_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
