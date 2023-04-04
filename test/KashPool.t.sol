@@ -126,6 +126,18 @@ contract CounterTest is Test {
 
         // alice supply 100u & borrow 2u
         app.supply(usdtReserve, alice, amount);
+        {
+            (
+                uint256 totalCollateralBase,
+                uint256 totalDebtBase,
+                uint256 availableBorrowsBase,
+                uint256 currentLiquidationThreshold,
+                uint256 ltv,
+                uint256 healthFactor
+            ) = pool.getUserAccountData(alice);
+            assertEq(availableBorrowsBase, 100 * 0.8 * 0.9 * 1e18);
+        }
+
         vm.prank(alice);
         usdtReserve.pool.borrow(address(usdtReserve.asset), 2 * 1e18, alice);
 
