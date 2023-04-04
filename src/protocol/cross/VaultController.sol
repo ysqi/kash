@@ -14,6 +14,8 @@ import "./Error.sol";
 import "@openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract VaultController is IVaultController, KashUUPSUpgradeable {
+    event ReceivedMail(bytes32 indexed msgId);
+
     using SafeERC20 for IERC20;
 
     address public messenger;
@@ -58,7 +60,7 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
         doorChainid = chainid;
         weth = WETH(wethAddress);
         mos = mosAddr;
-        gasLimit = 5000;
+        gasLimit = 50000;
     }
 
     function setVault(address token, address vault) external onlyOwner {
@@ -71,16 +73,22 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
     {
         IERC20(token).safeTransferFrom(msg.sender, vaults[token], amount);
         bytes32 sideAsset = keccak256(abi.encode(block.chainid, token));
-        bytes memory data = abi.encodeWithSignature(
+        bytes32 suppler = Utils.toBytes32(msg.sender);
+        bytes memory data = customData;
+        uint256 nonce = crossMailNonce[msg.sender];
+        bytes32 msgId = keccak256(abi.encode("supply", sideAsset, suppler, amount, data, nonce));
+
+        bytes memory callData = abi.encodeWithSignature(
             "handleSupply(bytes32,bytes32,uint256,bytes,uint256)",
             sideAsset,
-            Utils.toBytes32(msg.sender),
+            suppler,
             amount,
-            customData,
-            crossMailNonce[msg.sender]
+            data,
+            nonce
         );
+
         crossMailNonce[msg.sender]++;
-        _callMos(data);
+        _callMos(callData);
         emit Supply(msg.sender, token, amount);
     }
 
@@ -115,6 +123,7 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
             customData,
             crossMailNonce[msg.sender]
         );
+
         crossMailNonce[msg.sender]++;
         _callMos(data);
         emit Repay(msg.sender, token, amount);
@@ -159,6 +168,7 @@ contract VaultController is IVaultController, KashUUPSUpgradeable {
 
         _withdraw(token, to, amount);
         emit Withdraw(to, token, amount);
+        emit ReceivedMail(msgId);
     }
 
     function borrow(address token, address to, uint256 amount, uint256 nonce)

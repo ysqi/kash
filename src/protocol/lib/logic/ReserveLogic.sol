@@ -62,9 +62,10 @@ library ReserveLogic {
 
         uint256 nextBorrowInterestRate = IInterestRateStrategy(reserve.interestRateStrategyAddress)
             .borrowRate(cash, nextTotalBorrows, 0);
+        uint256 reserveFeePoint = 0.05 * 1e18; //TODO: fixed value
         uint256 newLiquidityInterestRate = IInterestRateStrategy(
             reserve.interestRateStrategyAddress
-        ).supplyRate(cash, nextTotalBorrows, 0, 0);
+        ).supplyRate(cash, nextTotalBorrows, 0, reserveFeePoint);
 
         reserve.currentVariableBorrowRate = nextBorrowInterestRate.safeCastTo128();
         reserve.liquidityIndex = nextLiquidityIndex.safeCastTo128();

@@ -13,6 +13,8 @@ import "../../protocol/lib/KashDataTypes.sol";
 import "../../protocol/lib/helpers/Errors.sol";
 
 contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
+    event ReceivedMail(bytes32 indexed msgId);
+
     IMOSV3 public mos;
     address public kashPool;
     address public messenger;
@@ -99,6 +101,8 @@ contract KashDoor is KashUUPSUpgradeable, IKashCrossDoor {
             mTokens[sideAsset], amount, interestRateMode, Utils.fromBytes32(borrower)
         );
         balance[sideAsset] += amount;
+
+        emit ReceivedMail(msgId);
     }
 
     function handleWithdraw(

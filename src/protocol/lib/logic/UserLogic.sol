@@ -74,11 +74,18 @@ library UserLogic {
         }
 
         currentLiquidationThreshold = 0.9 * 1e18; // fixed value 90%
-        uint256 borrowLimit = totalDiscounting.wadMul(currentLiquidationThreshold);
 
-        ltv = totalDebt.wadDiv(totalCollateral);
-        healthFactor = totalDebt.wadDiv(borrowLimit);
-        availableBorrows = borrowLimit > totalDebt ? borrowLimit - totalDebt : 0;
+        if (totalCollateral > 0) {
+            uint256 borrowLimit = totalDiscounting.wadMul(currentLiquidationThreshold);
+
+            ltv = totalDebt.wadDiv(totalCollateral);
+
+            availableBorrows = borrowLimit > totalDebt ? borrowLimit - totalDebt : 0;
+        }
+
+        if (totalDebt > 0) {
+            healthFactor = totalDiscounting.wadDiv(totalDebt);
+        }
 
         return (
             totalCollateral,
@@ -120,17 +127,31 @@ library UserLogic {
         for (uint16 i = 0; i < params.reservesCount; i++) {
             result.items[i].asset = reserveList[i];
 
-            if (hasSupply(params.userconfig, i) || hasBorrow(params.userconfig, i)) {
-                address asset = reserveList[i];
+            // TODO: return all data for all reserves or only for reserves with supply/borrow?
+            // if (hasSupply(params.userconfig, i) || hasBorrow(params.userconfig, i)) {
+            address asset = reserveList[i];
 
-                result.items[i] = getUserAccountDetailData(asset, params, reserveData);
+            result.items[i] = getUserAccountDetailData(asset, params, reserveData);
 
-                uint256 price = result.items[i].assetPrice;
-                result.summary.totalCollateral += result.items[i].totalSupply.wadMul(price);
-                result.summary.totalDebt += result.items[i].totalBorrows.wadMul(price);
-                result.summary.totalDiscounting +=
-                    result.items[i].totalSupply.wadMul(price).wadMul(result.items[i].collateralRate);
-            }
+            uint256 price = result.items[i].assetPrice;
+            result.summary.totalCollateral += result.items[i].totalSupply.wadMul(price);
+            result.summary.totalDebt += result.items[i].totalBorrows.wadMul(price);
+            result.summary.totalDiscounting +=
+                result.items[i].totalSupply.wadMul(price).wadMul(result.items[i].collateralRate);
         }
+
+        uint256 totalDebt = result.summary.totalDebt;
+        uint256 totalDiscounting = result.summary.totalDiscounting;
+        uint256 totalCollateral = result.summary.totalCollateral;
+        uint256 currentLiquidationThreshold = 0.9 * 1e18; // fixed value 90%
+        uint256 borrowLimit = totalDiscounting.wadMul(currentLiquidationThreshold);
+
+        if (totalCollateral > 0) result.summary.ltv = totalDebt.wadDiv(totalCollateral);
+        if (totalDebt > 0) {
+            result.summary.healthFactor = result.summary.totalDiscounting.wadDiv(totalDebt);
+        }
+
+        result.summary.availableBorrows = borrowLimit > totalDebt ? borrowLimit - totalDebt : 0;
+        result.summary.currentLiquidationThreshold = currentLiquidationThreshold;
     }
 }
