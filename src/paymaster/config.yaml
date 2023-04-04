@@ -1,0 +1,5 @@
+rpc: https://testnet-rpc.maplabs.io
+private_key: c5d80ce3cad46e2d4b64ca30c5ec8744deb0ddeeb4b96795eaee8cc5438db9ef
+target_contract: 0x5310C07Cd8fc53bb47dDbFC8d86E1F0bcE213d17
+chainId: 212
+run_port: 0.0.0.0:8081
